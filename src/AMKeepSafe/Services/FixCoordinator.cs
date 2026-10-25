@@ -11,6 +11,8 @@ public sealed class FixCoordinator(IReadOnlyList<IFix> fixes, FixCatalog catalog
 {
     public FixCatalog Catalog => catalog;
 
+    public bool IsDryRun => runner.IsDryRun;
+
     /// <summary>The fixes to offer under a result, in the order fixes.json lists them.</summary>
     public IReadOnlyList<FixDefinition> FixesFor(string checkId, string outcomeCode) =>
         catalog.For(checkId, outcomeCode).Where(d => fixes.Any(f => f.Id == d.Id)).ToList();

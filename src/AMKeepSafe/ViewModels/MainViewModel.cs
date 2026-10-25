@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Configuration;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Core.Platform;
@@ -14,10 +15,19 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly AppSettings _settings;
 
-    public MainViewModel(IAppLog log, IShellLauncher shell, IDialogService dialogs, AppSettings settings, AppOptions options, SafetyCheckViewModel? safetyCheck = null, UndoViewModel? undo = null)
+    public MainViewModel(
+        IAppLog log,
+        IShellLauncher shell,
+        IDialogService dialogs,
+        AppSettings settings,
+        AppOptions options,
+        SafetyCheckViewModel? safetyCheck = null,
+        UndoViewModel? undo = null,
+        BrowserCheckViewModel? browserCheck = null)
     {
         SafetyCheck = safetyCheck;
         Undo = undo;
+        BrowserCheck = browserCheck;
         _log = log;
         _shell = shell;
         _dialogs = dialogs;
@@ -30,6 +40,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>The "Undo changes" window.</summary>
     public UndoViewModel? Undo { get; }
+
+    /// <summary>The Browser check tab.</summary>
+    public BrowserCheckViewModel? BrowserCheck { get; }
+
+    /// <summary>Which tab is showing, in the order of <see cref="AppTab"/>.</summary>
+    [ObservableProperty]
+    private int _selectedTab;
+
+    /// <summary>Moves to a tab, for example when a result's button points to the Browser check.</summary>
+    public void GoToTab(AppTab tab)
+    {
+        _log.Info($"Moving to the {tab} tab.");
+        SelectedTab = (int)tab;
+    }
 
     public string ProductName => AppInfo.ProductName;
 

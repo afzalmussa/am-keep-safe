@@ -44,7 +44,7 @@ internal static class SampleChecks
         return new SafetyCheckViewModel(new SafetyCheckRunner(checks, Catalog, log), Catalog, shell ?? new FakeShell(), dialogs ?? new FakeDialogs(), log);
     }
 
-    public static MainViewModel MainWindowModel(SafetyCheckViewModel safetyCheck, bool dryRun = false) =>
+    public static MainViewModel MainWindowModel(SafetyCheckViewModel safetyCheck, bool dryRun = false, BrowserCheckViewModel? browserCheck = null) =>
         new(new FakeLog(), new FakeShell(), new FakeDialogs(), AppSettings.LoadEmbedded(),
-            dryRun ? AppOptions.Parse(["--dry-run"]) : AppOptions.Default, safetyCheck);
+            dryRun ? AppOptions.Parse(["--dry-run"]) : AppOptions.Default, safetyCheck, browserCheck: browserCheck);
 }

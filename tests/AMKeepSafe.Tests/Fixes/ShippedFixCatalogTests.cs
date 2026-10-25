@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.Tests.Support;
@@ -10,7 +11,19 @@ public partial class ShippedFixCatalogTests
 {
     private static readonly FixCatalog Catalog = FixCatalog.LoadEmbedded();
     private static readonly CheckCatalog Checks = CheckCatalog.LoadEmbedded();
-    private static readonly IReadOnlyList<IFix> Fixes = FixSet.Create(new FakeChanger(), "C:");
+    private static readonly BrowserPolicyReader Policies = new(new FakeRegistry(), new BrowserLocations("", "", []));
+    private static readonly IReadOnlyList<IFix> Fixes = FixSet.Create(new FakeChanger(), "C:", Policies);
+
+    /// <summary>The wording a fix's result comes from: checks.json, or browser-check.json for the browser fixes ("chrome-managed").</summary>
+    private static OutcomeDefinition OutcomeFor(string checkId, string code) =>
+        checkId.EndsWith("-managed", StringComparison.Ordinal)
+            ? BrowserKit.Text.Catalog[BrowserFindings.Managed].Outcomes[code]
+            : Checks[checkId].Outcomes[code];
+
+    private static bool HasOutcome(string checkId, string code) =>
+        checkId.EndsWith("-managed", StringComparison.Ordinal)
+            ? BrowserKit.Text.Catalog[BrowserFindings.Managed].Outcomes.ContainsKey(code)
+            : Checks[checkId].Outcomes.ContainsKey(code);
 
     public static TheoryData<string> FixIds() => [.. Catalog.Fixes.Select(f => f.Id)];
 
@@ -40,9 +53,8 @@ public partial class ShippedFixCatalogTests
     public void Fixes_are_offered_only_for_outcomes_that_exist(string id)
     {
         var fix = Catalog[id];
-        var check = Checks[fix.CheckId];
 
-        Assert.All(fix.ForOutcomes, o => Assert.True(check.Outcomes.ContainsKey(o), $"{id} is offered for {fix.CheckId}.{o}, which isn't in checks.json"));
+        Assert.All(fix.ForOutcomes, o => Assert.True(HasOutcome(fix.CheckId, o), $"{id} is offered for {fix.CheckId}.{o}, which has no wording"));
     }
 
     [Theory]
@@ -55,14 +67,14 @@ public partial class ShippedFixCatalogTests
         }
 
         var fix = Catalog[id];
-        Assert.All(fix.ForOutcomes, o => Assert.True(Checks[fix.CheckId].Outcomes[o].Status.NeedsAction(), $"{id} is offered on a result that doesn't need it: {o}"));
+        Assert.All(fix.ForOutcomes, o => Assert.True(OutcomeFor(fix.CheckId, o).Status.NeedsAction(), $"{id} is offered on a result that doesn't need it: {o}"));
     }
 
     [Fact]
     public async Task Changes_that_can_be_undone_in_the_app_say_what_undoing_does()
     {
         var changer = new FakeChanger();
-        foreach (var fix in FixSet.Create(changer, "C:"))
+        foreach (var fix in FixSet.Create(changer, "C:", Policies))
         {
             foreach (var change in (await fix.PlanAsync(Catalog[fix.Id], CancellationToken.None)).Where(c => c.Undo == UndoSupport.InApp))
             {

@@ -69,23 +69,14 @@
                        Text="Test mode is on. The app will show what it would do, but nothing on this PC will be changed." />
         </Border>
 
-        <TabControl Grid.Row="2" Style="{StaticResource MainTabControl}" ItemContainerStyle="{StaticResource MainTabItem}">
+        <TabControl Grid.Row="2" Style="{StaticResource MainTabControl}" ItemContainerStyle="{StaticResource MainTabItem}"
+                    SelectedIndex="{Binding SelectedTab}">
             <TabItem Header="Safety check" AutomationProperties.Name="Safety check">
                 <views:SafetyCheckView DataContext="{Binding SafetyCheck}" />
             </TabItem>
 
             <TabItem Header="Browser check" AutomationProperties.Name="Browser check">
-                <ScrollViewer Style="{StaticResource TabPage}">
-                    <Border Style="{StaticResource Card}" MaxWidth="820" HorizontalAlignment="Left">
-                        <StackPanel>
-                            <TextBlock Text="Browser check" Style="{StaticResource HeadingText}" />
-                            <TextBlock Style="{StaticResource BodyText}" Margin="0,12,0,0"
-                                       Text="Look at Edge, Chrome and Firefox for a changed search engine or home page, add-ons you may not recognise, and websites allowed to send you notifications." />
-                            <TextBlock Style="{StaticResource MutedText}" Margin="0,12,0,0"
-                                       Text="This part of the app is still being built." />
-                        </StackPanel>
-                    </Border>
-                </ScrollViewer>
+                <views:BrowserCheckView DataContext="{Binding BrowserCheck}" />
             </TabItem>
 
             <TabItem Header="Scam help" AutomationProperties.Name="Scam help">

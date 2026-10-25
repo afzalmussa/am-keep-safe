@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Core.Platform;
 
@@ -14,7 +15,8 @@ public sealed record CheckSources(
     ISecureBootTpmInfo SecureBootTpm,
     ISmb1Info Smb1,
     RemoteToolList RemoteTools,
-    TimeProvider Time);
+    TimeProvider Time,
+    BrowserCheckRunner? Browsers = null);
 
 public static class SafetyCheckSet
 {
@@ -32,5 +34,6 @@ public static class SafetyCheckSet
         new Smb1Check(sources.Smb1),
         new RemoteToolsCheck(sources.RemoteTools, sources.Registry, sources.Processes),
         new SecureBootTpmCheck(sources.SecureBootTpm),
+        .. (sources.Browsers is null ? Array.Empty<ISafetyCheck>() : [new BrowserSummaryCheck(sources.Browsers)]),
     ];
 }

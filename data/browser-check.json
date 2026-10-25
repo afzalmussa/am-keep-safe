@@ -1,0 +1,258 @@
+{
+  // Everything the Browser check says. Same layout as checks.json: each finding has outcomes with a
+  // status, a summary, steps and buttons. {browser} is filled in with the browser's name.
+  //
+  // Buttons can open one of the browser's own pages ("browserPage": extensions, notifications,
+  // search, startPages or reset). The addresses for each browser are in the browsers section below.
+  // Profile files are only ever read: fixes either remove policy settings (with a backup and undo)
+  // or open the browser's own settings page with simple steps.
+
+  "statusLabels": {
+    "good": "Looks fine",
+    "attention": "Worth a look",
+    "problem": "Needs your attention",
+    "info": "For your information",
+    "unknown": "Couldn't check"
+  },
+
+  "summary": {
+    "allClear": "No problems found in the browsers we checked.",
+    "someToLookAt": "Some things in your browsers are worth a look. Each one says what it means and what you can do about it.",
+    "someNotChecked": "Some browser settings couldn't be read this time.",
+    "whatWeCheckedLink": "See what we checked"
+  },
+
+  "couldNotCheck": {
+    "status": "unknown",
+    "summary": "We couldn't check this just now. The details are saved in the log."
+  },
+
+  "browsers": {
+    "edge": {
+      "name": "Microsoft Edge",
+      "pages": {
+        "extensions": "edge://extensions",
+        "notifications": "edge://settings/content/notifications",
+        "search": "edge://settings/search",
+        "startPages": "edge://settings/startHomeNTP",
+        "reset": "edge://settings/reset"
+      }
+    },
+    "chrome": {
+      "name": "Google Chrome",
+      "pages": {
+        "extensions": "chrome://extensions",
+        "notifications": "chrome://settings/content/notifications",
+        "search": "chrome://settings/search",
+        "startPages": "chrome://settings/onStartup",
+        "reset": "chrome://settings/reset"
+      }
+    },
+    "firefox": {
+      "name": "Firefox",
+      "pages": {
+        "extensions": "about:addons",
+        "notifications": "about:preferences#privacy",
+        "search": "about:preferences#search",
+        "startPages": "about:preferences#home",
+        "reset": "about:support"
+      }
+    }
+  },
+
+  "notes": {
+    "differentAccount": "AM Keep Safe is running as {runningAs}, so these are that account's browsers, not the ones belonging to {signedIn}. To check {signedIn}'s browsers, sign in to Windows as {signedIn} with an administrator account, or ask whoever looks after this PC.",
+    "noBrowsers": "We didn't find Microsoft Edge, Google Chrome or Firefox being used on this Windows account.",
+    "closeTitle": "Close the browser now?",
+    "closeBody": "{browser} needs to close and open again for this to take effect. Anything you haven't saved in it, such as a half-written email, will be lost. {browser} usually offers to open your tabs again when it restarts.",
+    "closeYes": "Close {browser} now",
+    "closeNo": "Not now",
+    "stillOpen": "{browser} is still open. Please close it yourself, then open it again.",
+    "checkButton": "Check my browsers",
+    "checkAgainButton": "Check again",
+    "intro": "Check Microsoft Edge, Google Chrome and Firefox for a changed search engine or start page, add-ons you may not recognise, settings that control the browser, and websites allowed to send you notifications. This only looks: nothing is changed.",
+    "checking": "Checking your browsers..."
+  },
+
+  "checks": [
+    {
+      "id": "browser-managed",
+      "title": "Managed by your organisation",
+      "whatWeCheck": "Whether settings on this PC are controlling the browser. On a home PC this is often a trick used by unwanted software.",
+      "parameters": {
+        "maxItems": 12,
+        "andMore": "and {count} more"
+      },
+      "outcomes": {
+        "none": {
+          "status": "good",
+          "summary": "{browser} isn't being controlled by any settings on this PC."
+        },
+        "present": {
+          "status": "attention",
+          "summary": "{browser} is being controlled by settings on this PC, which is why it may say \"Managed by your organisation\". On a home PC this is often done by unwanted software to lock in a search engine, start page or add-on. These are the settings:",
+          "howToFix": [
+            "If you didn't set these up, click \"Remove these settings\". AM Keep Safe keeps a copy first, so you can put them back from \"Undo changes\".",
+            "Then close {browser} and open it again for the change to take effect."
+          ]
+        },
+        "presentWorkPc": {
+          "status": "info",
+          "summary": "{browser} is being controlled by settings on this PC. This PC seems to be looked after by a workplace or school, so these are probably deliberate. Ask whoever looks after it before changing anything."
+        }
+      }
+    },
+    {
+      "id": "browser-search",
+      "title": "Search engine",
+      "whatWeCheck": "Which search engine the browser uses, and whether an add-on or a setting on this PC chose it.",
+      "outcomes": {
+        "wellKnown": {
+          "status": "good",
+          "summary": "{browser} searches with {engine}."
+        },
+        "browserDefault": {
+          "status": "good",
+          "summary": "{browser} uses its normal search engine."
+        },
+        "notRecognised": {
+          "status": "attention",
+          "summary": "{browser} searches with {engine}, which isn't a search engine we recognise. If you didn't choose it, an add-on or another program may have changed it.",
+          "howToFix": [
+            "Click \"Open search settings\" below. {browser} opens on the right page.",
+            "Choose a search engine you know, such as Google or Bing.",
+            "If it changes back by itself, check the add-ons for this browser below."
+          ],
+          "actions": [ { "label": "Open search settings", "browserPage": "search" } ]
+        },
+        "setByExtension": {
+          "status": "attention",
+          "summary": "The add-on \"{by}\" has set {browser}'s search engine to {engine}. If you didn't choose this, it's best to remove that add-on.",
+          "howToFix": [
+            "Click \"Open add-ons page\" below. {browser} opens on its add-ons page.",
+            "Find \"{by}\" and remove it. In Firefox, click the three dots next to it, then Remove.",
+            "Your search engine goes back to how it was."
+          ],
+          "actions": [ { "label": "Open add-ons page", "browserPage": "extensions" } ]
+        },
+        "setByPolicy": {
+          "status": "attention",
+          "summary": "A setting on this PC forces {browser} to search with {engine}. The \"Managed by your organisation\" result above has a button to remove it."
+        },
+        "partnerLink": {
+          "status": "attention",
+          "summary": "{browser} searches with {engine}, but through another company's link. That's a common sign of an add-on that changed your search.",
+          "howToFix": [
+            "Click \"Open search settings\" below and choose your search engine again.",
+            "Check the add-ons for this browser below, and remove any you don't recognise."
+          ],
+          "actions": [ { "label": "Open search settings", "browserPage": "search" } ]
+        }
+      }
+    },
+    {
+      "id": "browser-start-pages",
+      "title": "Start page",
+      "whatWeCheck": "Which pages open when the browser starts, and whether an add-on or a setting on this PC chose them.",
+      "outcomes": {
+        "browserDefault": {
+          "status": "good",
+          "summary": "{browser} opens with its normal start page."
+        },
+        "userPages": {
+          "status": "info",
+          "summary": "{browser} opens with these pages. If you didn't choose them, you can change them in the browser's settings.",
+          "actions": [ { "label": "Open start page settings", "browserPage": "startPages" } ]
+        },
+        "setByExtension": {
+          "status": "attention",
+          "summary": "The add-on \"{by}\" has set the pages {browser} opens with. If you didn't choose this, it's best to remove that add-on.",
+          "howToFix": [
+            "Click \"Open add-ons page\" below.",
+            "Find \"{by}\" and remove it. In Firefox, click the three dots next to it, then Remove."
+          ],
+          "actions": [ { "label": "Open add-ons page", "browserPage": "extensions" } ]
+        },
+        "setByPolicy": {
+          "status": "attention",
+          "summary": "A setting on this PC forces {browser} to open with these pages. The \"Managed by your organisation\" result above has a button to remove it."
+        }
+      }
+    },
+    {
+      "id": "browser-extensions",
+      "title": "Add-ons",
+      "whatWeCheck": "The add-ons (also called extensions) installed in the browser, where they came from, and whether any are known to be harmful.",
+      "parameters": {
+        "itemStore": "{name}",
+        "itemOutsideStore": "{name}: added outside the official store. Do you recognise it?",
+        "itemPolicy": "{name}: put there by a setting on this PC",
+        "itemKnownBad": "{name}: removed from the store after it was found to be harmful",
+        "switchedOff": " (switched off)"
+      },
+      "outcomes": {
+        "none": {
+          "status": "good",
+          "summary": "{browser} has no add-ons installed."
+        },
+        "allFromStore": {
+          "status": "good",
+          "summary": "These add-ons came from the official store. If you don't use one any more, you can remove it.",
+          "actions": [ { "label": "Open add-ons page", "browserPage": "extensions" } ]
+        },
+        "someToCheck": {
+          "status": "attention",
+          "summary": "Some of these add-ons didn't come from the official store, or were put there by a setting on this PC. That doesn't make them harmful. Do you recognise them?",
+          "howToFix": [
+            "Click \"Open add-ons page\" below.",
+            "If there's one you don't recognise or don't use, remove it. In Firefox, click the three dots next to it, then Remove.",
+            "An add-on that was put there by a setting on this PC can't be removed this way. Use \"Remove these settings\" above first."
+          ],
+          "actions": [ { "label": "Open add-ons page", "browserPage": "extensions" } ]
+        },
+        "knownBad": {
+          "status": "problem",
+          "summary": "At least one of these add-ons was removed from the store after it was found to be harmful. Removing an add-on from the store doesn't remove it from your browser, so it's best to remove it now.",
+          "howToFix": [
+            "Click \"Open add-ons page\" below.",
+            "Find the add-on marked as removed from the store, and click Remove.",
+            "If it was put there by a setting on this PC, use \"Remove these settings\" above first."
+          ],
+          "actions": [ { "label": "Open add-ons page", "browserPage": "extensions" } ]
+        }
+      }
+    },
+    {
+      "id": "browser-notifications",
+      "title": "Websites allowed to send notifications",
+      "whatWeCheck": "Which websites can pop up notifications. This is the most common way fake virus warnings appear.",
+      "outcomes": {
+        "none": {
+          "status": "good",
+          "summary": "No websites can send you notifications in {browser}."
+        },
+        "some": {
+          "status": "info",
+          "summary": "These websites can send you notifications. Fake virus warnings often arrive this way. If you don't recognise one, block it.",
+          "howToFix": [
+            "Click \"Open notification settings\" below. {browser} opens on the right page.",
+            "Find the website, click the three dots or the menu next to it, and choose Block or Remove.",
+            "A real virus warning never comes from a website. Never call a phone number shown in a pop-up."
+          ],
+          "actions": [ { "label": "Open notification settings", "browserPage": "notifications" } ]
+        }
+      }
+    },
+    {
+      "id": "browser-unreadable",
+      "title": "Browser settings",
+      "whatWeCheck": "Shown when a browser profile's settings can't be read.",
+      "outcomes": {
+        "couldNotRead": {
+          "status": "unknown",
+          "summary": "We couldn't read this profile's settings. Closing {browser} and checking again sometimes helps. The details are in the log."
+        }
+      }
+    }
+  ]
+}

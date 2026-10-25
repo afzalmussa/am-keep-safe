@@ -30,6 +30,33 @@ public static class ProtectionGuard
     // Services that keep the PC protected or up to date.
     private static readonly string[] ProtectionServices = ["wuauserv", "WinDefend", "mpssvc", "BFE", "wscsvc", "UsoSvc", "WaaSMedicSvc"];
 
+    /// <summary>
+    /// Whole keys and files the app may remove or restore: the browser policy locations only. Anything
+    /// else is refused, so the power to remove a key can never reach beyond what it was built for.
+    /// </summary>
+    private static readonly string[] RemovableKeys =
+    [
+        @"SOFTWARE\Policies\Microsoft\Edge",
+        @"SOFTWARE\Policies\Google\Chrome",
+        @"SOFTWARE\Policies\Mozilla\Firefox",
+    ];
+
+    /// <summary>The one check every change passes before it's made, including undo.</summary>
+    public static bool Allows(SettingChange change) => !WouldWeaken(change) && change.Kind switch
+    {
+        ChangeKind.RegistryKey => RemovableKeys.Contains(change.RegistryKey, StringComparer.OrdinalIgnoreCase),
+        ChangeKind.File => IsFirefoxPolicyFile(change.Target),
+        _ => true,
+    };
+
+    private static bool IsFirefoxPolicyFile(string path)
+    {
+        var normalised = path.Replace('/', '\\');
+        return normalised.EndsWith(@"\distribution\policies.json", StringComparison.OrdinalIgnoreCase)
+               && normalised.Contains(@"\Mozilla Firefox\", StringComparison.OrdinalIgnoreCase)
+               && !normalised.Contains("..", StringComparison.Ordinal);
+    }
+
     /// <summary>True if the change would switch off, or weaken, a protection.</summary>
     public static bool WouldWeaken(SettingChange change) => change.Kind switch
     {

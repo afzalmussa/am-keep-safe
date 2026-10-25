@@ -428,6 +428,27 @@
     },
 
     {
+      "id": "browsers",
+      "title": "Web browsers",
+      "whatWeCheck": "A summary of the Browser check: search engines, start pages, add-ons, websites allowed to send notifications, and settings controlling the browser.",
+      "outcomes": {
+        "allClear": {
+          "status": "good",
+          "summary": "No problems found in your web browsers."
+        },
+        "somethingToLook": {
+          "status": "attention",
+          "summary": "Something in your web browsers is worth a look. The Browser check has the details and what to do.",
+          "actions": [ { "label": "Open the Browser check", "appTab": "browserCheck" } ]
+        },
+        "noBrowsers": {
+          "status": "info",
+          "summary": "We didn't find Microsoft Edge, Google Chrome or Firefox being used on this Windows account."
+        }
+      }
+    },
+
+    {
       "id": "remote-desktop",
       "title": "Remote Desktop",
       "whatWeCheck": "Whether Remote Desktop, which lets other computers connect to and control this one, is switched on.",

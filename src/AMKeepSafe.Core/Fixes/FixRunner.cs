@@ -26,7 +26,8 @@ public sealed record FixRunResult(FixOutcome Outcome, IReadOnlyList<SettingChang
 /// anything (rule 5), makes the change, reads it back to be sure, and logs every step (rule 9).
 /// In test mode it only logs what it would have done (rule 11).
 /// </summary>
-public sealed class FixRunner(ISystemChanger changer, IUndoJournal journal, IAppLog log, TimeProvider time, bool dryRun)
+/// <param name="backupFolder">Where copies are kept before a key or file is removed.</param>
+public sealed class FixRunner(ISystemChanger changer, IUndoJournal journal, IAppLog log, TimeProvider time, bool dryRun, string backupFolder)
 {
     public bool IsDryRun => dryRun;
 
@@ -69,10 +70,26 @@ public sealed class FixRunner(ISystemChanger changer, IUndoJournal journal, IApp
     /// <summary>Makes one change. Used by undo too, which records the undo itself instead of a new entry.</summary>
     internal async Task<bool> MakeAsync(SettingChange change, bool record, CancellationToken cancellationToken)
     {
-        if (ProtectionGuard.WouldWeaken(change))
+        if (!ProtectionGuard.Allows(change))
         {
-            log.Error($"Refused a change that would weaken protection: {change.TechnicalDetail}.");
+            log.Error($"Refused a change that would weaken protection or isn't allowed: {change.TechnicalDetail}.");
             return false;
+        }
+
+        if (change.IsRemoval)
+        {
+            // Trust rule 5: back up anything before removing it, and don't remove it if that fails.
+            try
+            {
+                var backup = await changer.BackupAsync(change, backupFolder, cancellationToken).ConfigureAwait(false);
+                change = change with { BackupFile = backup };
+                log.Info($"Kept a copy before removing it: {backup}.");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                log.Error($"Couldn't keep a copy, so this wasn't removed: {change.TechnicalDetail}.", ex);
+                return false;
+            }
         }
 
         UndoEntry? entry = null;
@@ -90,6 +107,7 @@ public sealed class FixRunner(ISystemChanger changer, IUndoJournal journal, IApp
                 },
                 DisplayName = change.Description,
                 Data = change.ToUndoData(),
+                BackupFile = change.BackupFile,
                 CanUndoInApp = change.Undo == UndoSupport.InApp,
             };
 

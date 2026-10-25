@@ -57,7 +57,8 @@ public class ReadOnlyChangerTests
     public async Task Every_fix_can_be_planned_on_a_real_PC_without_changing_anything()
     {
         var catalog = FixCatalog.LoadEmbedded();
-        foreach (var fix in FixSet.Create(Changer(), Environment.GetEnvironmentVariable("SystemDrive") ?? "C:"))
+        var policies = new AMKeepSafe.Core.Browsers.BrowserPolicyReader(new WindowsRegistryReader(), AMKeepSafe.Core.Browsers.BrowserLocations.ForCurrentUser());
+        foreach (var fix in FixSet.Create(Changer(), Environment.GetEnvironmentVariable("SystemDrive") ?? "C:", policies))
         {
             IReadOnlyList<SettingChange> plan;
             try
@@ -71,7 +72,7 @@ public class ReadOnlyChangerTests
                 continue;
             }
 
-            Assert.All(plan, c => Assert.False(ProtectionGuard.WouldWeaken(c), $"{fix.Id}: {c.TechnicalDetail}"));
+            Assert.All(plan, c => Assert.True(ProtectionGuard.Allows(c), $"{fix.Id}: {c.TechnicalDetail}"));
         }
 
         // Planning must never have run a command that changes anything.

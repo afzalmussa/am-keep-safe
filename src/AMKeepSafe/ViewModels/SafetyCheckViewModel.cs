@@ -17,7 +17,8 @@ public sealed partial class SafetyCheckViewModel(
     IShellLauncher shell,
     IDialogService dialogs,
     IAppLog log,
-    FixCoordinator? fixes = null) : ObservableObject
+    FixCoordinator? fixes = null,
+    ResultLinks? links = null) : ObservableObject
 {
     private IReadOnlyList<CheckResult> _latest = [];
 
@@ -87,7 +88,8 @@ public sealed partial class SafetyCheckViewModel(
         log,
         fixes?.FixesFor(result.CheckId, result.OutcomeCode),
         fixes is null ? null : RunFixAsync,
-        fixes?.Catalog.Common.WorkingText ?? "");
+        fixes?.Catalog.Common.WorkingText ?? "",
+        links);
 
     /// <summary>Runs a fix, then checks that one thing again so the result shows what's true now.</summary>
     private async Task RunFixAsync(CheckResultViewModel item, FixDefinition fix)

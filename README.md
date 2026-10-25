@@ -48,6 +48,7 @@ Click **Check my PC** and AM Keep Safe looks at these things. It only looks: not
 | Old file sharing (SMB1) | Whether a very old, weak way of sharing files is switched on |
 | Remote control apps | Apps like AnyDesk and TeamViewer, listed so you can say whether you recognise them |
 | Secure Boot and security chip | Shown for information only |
+| Browsers | A summary of the Browser check below, with a button to see the details |
 
 Each result is green ("Looks fine"), amber ("Worth a look"), red ("Needs your attention"), blue ("For your information") or grey ("Couldn't check"), with its own icon and words as well as its colour. Each one says what it means in a sentence or two, and red and amber results say how to fix them.
 
@@ -56,6 +57,23 @@ When nothing needs attention, AM Keep Safe says "No problems found in the things
 Every word the check uses, and the rules that decide each colour, are in [`data/checks.json`](data/checks.json). The list of remote control apps is in [`data/remote-tools.json`](data/remote-tools.json).
 
 <!-- Screenshot: a result opened to show its "How to fix" steps. -->
+
+## Browser check
+
+The **Browser check** tab looks at Microsoft Edge, Google Chrome and Firefox, in every profile, for:
+
+- a search engine or start page that has been changed, and which add-on or setting changed it
+- add-ons (also called extensions) that came from outside the official store, were put there by a setting on the PC, or are known to be harmful
+- settings on the PC that control the browser, which is why a home browser might say "Managed by your organisation"
+- websites allowed to send you notifications, the most common way fake virus warnings appear
+
+It never edits a browser's own files. An add-on that isn't from the store is shown as "Do you recognise it?", never as harmful, because plenty of honest ones are installed that way.
+
+If settings on the PC are controlling a browser, **Remove these settings** shows exactly what will be removed first and keeps a copy, so you can put them back from **Undo changes**. The browser then needs to close and open again. AM Keep Safe asks before closing it, and never forces it closed. On a PC looked after by a workplace or school, these settings are probably deliberate, so there's no button to remove them. Everything else opens the right page in that browser, with short steps to follow.
+
+The words, the list of well-known search engines and the list of harmful add-ons are in [`data/browser-check.json`](data/browser-check.json), [`data/search-engines.json`](data/search-engines.json) and [`data/extensions-known-bad.json`](data/extensions-known-bad.json).
+
+<!-- Screenshot: the Browser check tab with a changed search engine and the "Managed by your organisation" result. -->
 
 ## Free and Pro
 
@@ -86,6 +104,7 @@ Before anything changes, AM Keep Safe shows you exactly what it will do, includi
 To undo a change, click **Undo changes** at the bottom of the window. You'll see everything AM Keep Safe has changed, newest first:
 
 - Changes like turning off Remote Desktop or the old SMB1 file sharing have an **Undo** button. Undo shows you a preview too, and puts the setting back exactly as it was.
+- Browser settings removed by **Remove these settings** have an **Undo** button too. AM Keep Safe kept a copy before removing them, in `%ProgramData%\AMSoftware\KeepSafe\backups`, and puts them back from that copy.
 - Changes that switched a protection on, such as the firewall or Microsoft Defender's real-time protection, are never switched off again by AM Keep Safe. If you really need to change one back, **Open Windows Settings** takes you to the right page to do it yourself.
 - Running a scan or updating virus information doesn't change any settings, so there's nothing to undo.
 
@@ -109,6 +128,7 @@ src/AMKeepSafe.Core       Check rules, licensing, undo and service interfaces. N
 src/AMKeepSafe.Windows    Windows versions of the service interfaces
 tests/AMKeepSafe.Tests    Tests for Core and for the repo's own files. Run on any OS.
 tests/AMKeepSafe.UI.Tests Tests for the app's windows and view models. Windows only.
+tests/AMKeepSafe.Windows.Tests  Tests of the Windows code against a real PC. Windows only.
 data                      Wording, check rules and lists, as editable JSON
 assets                    Icon, logo and font
 ```

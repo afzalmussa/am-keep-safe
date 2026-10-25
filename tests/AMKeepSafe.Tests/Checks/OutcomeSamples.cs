@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Tests.Support;
@@ -11,6 +12,9 @@ namespace AMKeepSafe.Tests.Checks;
 public static class OutcomeSamples
 {
     private static readonly DateTimeOffset Now = HealthyPc.Now;
+
+    private static BrowserSection Section(CheckStatus status) =>
+        new(Browser.Edge, "Microsoft Edge", [new CheckResult("edge-default-search", "Search engine", "x", status, "s", [], [], [])]);
 
     public static IReadOnlyDictionary<string, IReadOnlyList<CheckOutcome>> All(CheckCatalog catalog)
     {
@@ -98,6 +102,12 @@ public static class OutcomeSamples
             [
                 RemoteToolsCheck.Evaluate([], tools),
                 RemoteToolsCheck.Evaluate([new FoundRemoteTool("AnyDesk", true, true)], tools),
+            ],
+            [BrowserSummaryCheck.CheckId] =
+            [
+                BrowserSummaryCheck.Evaluate(new BrowserCheckReport([Section(CheckStatus.Good)], null)),
+                BrowserSummaryCheck.Evaluate(new BrowserCheckReport([Section(CheckStatus.Attention)], null)),
+                BrowserSummaryCheck.Evaluate(new BrowserCheckReport([], "None")),
             ],
             [SecureBootTpmCheck.CheckId] =
             [

@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Core.Platform;
@@ -108,8 +109,14 @@ public static class HealthyPc
         .Set(RegistryRoot.CurrentUser, @"Software\Microsoft\OneDrive\Accounts\Personal", "UserFolder", @"C:\Users\Pat\OneDrive")
         .Set(RegistryRoot.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders", "Personal", @"C:\Users\Pat\OneDrive\Documents");
 
-    public static CheckSources Sources(FakeRegistry? registry = null, params string[] running) => new(
-        registry ?? Registry(),
+    public static CheckSources Sources(FakeRegistry? registry = null, params string[] running)
+    {
+        registry ??= Registry();
+        return Build(registry, running);
+    }
+
+    private static CheckSources Build(FakeRegistry registry, string[] running) => new(
+        registry,
         new FakeProcesses(running),
         new FakeWindowsUpdate { Status = new WindowsUpdateStatus(ServiceStart.Manual, Now.AddDays(-5), false, null), Waiting = 0 },
         new FakeFacts<AntivirusFacts>(new AntivirusFacts([new AntivirusProduct("Windows Defender", true, true)], new DefenderStatus(true, true, Now.AddHours(-6), "Normal"))),
@@ -118,5 +125,32 @@ public static class HealthyPc
         new FakeFacts<SecureBootTpmFacts>(new SecureBootTpmFacts(SecureBootState.On, true, true, "2.0")),
         new FakeFacts<Smb1Facts>(new Smb1Facts(FeatureState.NotPresent, false)),
         RemoteToolList.LoadEmbedded(),
-        new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Now));
+        new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Now),
+        BrowserKit.Runner(new BrowserLocations(EmptyFolder, EmptyFolder, []), registry));
+
+    // No browsers have been used on the healthy test PC.
+    private static readonly string EmptyFolder = Directory.CreateTempSubdirectory("amkeepsafe-empty-").FullName;
+}
+
+public sealed class FakePcContext(PcContext context) : IPcContextInfo
+{
+    public Task<PcContext> GetAsync(CancellationToken cancellationToken) => Task.FromResult(context);
+}
+
+/// <summary>Builds the browser check over test folders and a fake registry.</summary>
+public static class BrowserKit
+{
+    public static readonly SearchEngineList Engines = SearchEngineList.LoadEmbedded();
+    public static readonly KnownBadExtensionList KnownBad = KnownBadExtensionList.LoadEmbedded();
+    public static readonly BrowserText Text = BrowserText.LoadEmbedded();
+
+    public static BrowserCheckRunner Runner(BrowserLocations locations, IRegistryReader registry, PcContext? context = null, MemoryLog? log = null) => new(
+        new ChromiumReader(locations),
+        new FirefoxReader(locations),
+        new BrowserPolicyReader(registry, locations),
+        new FakePcContext(context ?? new PcContext(false, @"PC\Pat", @"PC\Pat")),
+        Engines,
+        KnownBad,
+        Text,
+        log ?? new MemoryLog());
 }

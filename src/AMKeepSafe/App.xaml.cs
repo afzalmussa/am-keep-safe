@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Core.Configuration;
@@ -9,6 +10,7 @@ using AMKeepSafe.Core.Undo;
 using AMKeepSafe.Services;
 using AMKeepSafe.ViewModels;
 using AMKeepSafe.Views;
+using AMKeepSafe.Windows.Browsers;
 using AMKeepSafe.Windows.Checks;
 using AMKeepSafe.Windows.Fixes;
 using AMKeepSafe.Windows.Platform;
@@ -63,6 +65,21 @@ public partial class App : Application
 
         var powerShell = new PowerShellRunner(_log);
         var registry = new WindowsRegistryReader();
+
+        // The Browser check reads the browsers of the account the app runs as. Profile files are only read.
+        var browserLocations = BrowserLocations.ForCurrentUser();
+        var browserPolicies = new BrowserPolicyReader(registry, browserLocations);
+        var browserText = BrowserText.LoadEmbedded();
+        var browsers = new BrowserCheckRunner(
+            new ChromiumReader(browserLocations),
+            new FirefoxReader(browserLocations),
+            browserPolicies,
+            new PcContextInfo(powerShell),
+            SearchEngineList.LoadEmbedded(),
+            KnownBadExtensionList.LoadEmbedded(),
+            browserText,
+            _log);
+
         var checks = SafetyCheckSet.Create(new CheckSources(
             registry,
             new WindowsProcessList(),
@@ -73,21 +90,28 @@ public partial class App : Application
             new SecureBootTpmInfo(powerShell),
             new Smb1Info(powerShell),
             RemoteToolList.LoadEmbedded(),
-            TimeProvider.System));
+            TimeProvider.System,
+            browsers));
         var catalog = CheckCatalog.LoadEmbedded();
 
-        // Everything that changes the PC goes through the fix runner: preview, record, change, check, log.
+        // Everything that changes the PC goes through the fix runner: preview, record, back up, change, check, log.
         var changer = new WindowsSystemChanger(powerShell, registry);
         var journal = new FileUndoJournal(AppPaths.UndoHistory, _log);
-        var fixRunner = new FixRunner(changer, journal, _log, TimeProvider.System, options.DryRun);
+        var fixRunner = new FixRunner(changer, journal, _log, TimeProvider.System, options.DryRun, AppPaths.Backups);
         var fixCatalog = FixCatalog.LoadEmbedded();
         var systemDrive = Environment.GetEnvironmentVariable("SystemDrive") ?? "C:";
-        var fixes = new FixCoordinator(FixSet.Create(changer, systemDrive), fixCatalog, fixRunner, dialogs, _log);
+        var fixes = new FixCoordinator(FixSet.Create(changer, systemDrive, browserPolicies), fixCatalog, fixRunner, dialogs, _log);
         var undo = new UndoViewModel(new UndoService(fixRunner, changer, journal, fixCatalog.Common, _log, TimeProvider.System), fixCatalog.Common, dialogs, shell, _log);
 
-        var safetyCheck = new SafetyCheckViewModel(new SafetyCheckRunner(checks, catalog, _log), catalog, shell, dialogs, _log, fixes);
+        // Result buttons can move between tabs, so they need the main view model, which is made last.
+        MainViewModel? main = null;
+        void GoToTab(AppTab tab) => main?.GoToTab(tab);
 
-        var viewModel = new MainViewModel(_log, shell, dialogs, settings, options, safetyCheck, undo);
+        var safetyCheck = new SafetyCheckViewModel(
+            new SafetyCheckRunner(checks, catalog, _log), catalog, shell, dialogs, _log, fixes, new ResultLinks(browserText.PageAddress, GoToTab));
+        var browserCheck = new BrowserCheckViewModel(browsers, shell, dialogs, _log, fixes, new WindowsBrowserProcesses(_log), GoToTab);
+
+        var viewModel = main = new MainViewModel(_log, shell, dialogs, settings, options, safetyCheck, undo, browserCheck);
 
         var window = new MainWindow { DataContext = viewModel };
         MainWindow = window;

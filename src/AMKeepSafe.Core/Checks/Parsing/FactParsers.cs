@@ -145,6 +145,15 @@ public static class FactParsers
         return new Smb1Facts(feature, Bool(root, "serverSmb1"));
     }
 
+    /// <summary>Whether this is a work or school PC, and who is signed in at the screen.</summary>
+    public static Browsers.PcContext PcContext(string json, string runningAs)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var managed = Bool(root, "partOfDomain") == true || Bool(root, "azureAdJoined") == true || Bool(root, "mdmEnrolled") == true;
+        return new Browsers.PcContext(managed, runningAs, String(root, "userName"));
+    }
+
     private static string? String(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 

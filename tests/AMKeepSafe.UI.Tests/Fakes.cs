@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.Core.Undo;
@@ -56,6 +57,14 @@ internal sealed class FakeShell : IShellLauncher
         OpenedSettings.Add(page);
         return SettingsWork;
     }
+
+    public List<(Browser Browser, string Address)> OpenedBrowserPages { get; } = [];
+
+    public bool OpenBrowserPage(Browser browser, string address)
+    {
+        OpenedBrowserPages.Add((browser, address));
+        return true;
+    }
 }
 
 internal sealed class FakeDialogs : IDialogService
@@ -83,6 +92,39 @@ internal sealed class FakeDialogs : IDialogService
     }
 
     public void ShowUndo(UndoViewModel undo) => UndoShown.Add(undo);
+
+    public List<string> Questions { get; } = [];
+
+    /// <summary>What the person answers to a yes/no question.</summary>
+    public bool YesAnswer { get; set; }
+
+    public bool Confirm(string heading, string body, string yesText, string noText)
+    {
+        Questions.Add(body);
+        return YesAnswer;
+    }
+}
+
+internal sealed class FakeBrowserProcesses : IBrowserProcesses
+{
+    public HashSet<Browser> Running { get; } = [];
+
+    public List<Browser> CloseRequests { get; } = [];
+
+    public bool Closes { get; set; } = true;
+
+    public bool IsRunning(Browser browser) => Running.Contains(browser);
+
+    public Task<bool> CloseAsync(Browser browser, TimeSpan wait, CancellationToken cancellationToken = default)
+    {
+        CloseRequests.Add(browser);
+        if (Closes)
+        {
+            Running.Remove(browser);
+        }
+
+        return Task.FromResult(Closes);
+    }
 }
 
 /// <summary>Windows settings held in memory.</summary>
@@ -106,9 +148,23 @@ internal sealed class FakeChanger : ISystemChanger
     public Task<string?> ReadAsync(SettingChange change, CancellationToken cancellationToken) =>
         Task.FromResult(change.Kind == ChangeKind.Task ? null : _values.GetValueOrDefault(Identity(change)));
 
+    public List<string> Backups { get; } = [];
+
+    public Task<string> BackupAsync(SettingChange change, string folder, CancellationToken cancellationToken)
+    {
+        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"amkeepsafe-ui-backup-{Guid.NewGuid():N}.json");
+        System.IO.File.WriteAllText(path, Identity(change));
+        Backups.Add(path);
+        return Task.FromResult(path);
+    }
+
+    /// <summary>Called after each change, so a test can make the rest of its fake world match.</summary>
+    public Action<SettingChange>? AfterApply { get; set; }
+
     public Task ApplyAsync(SettingChange change, CancellationToken cancellationToken)
     {
         Applied.Add(change);
+        AfterApply?.Invoke(change);
         if (change.Kind != ChangeKind.Task)
         {
             _values[Identity(change)] = change.To;

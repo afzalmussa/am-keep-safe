@@ -1,0 +1,30 @@
+{
+  // Well-known search engines. A browser whose search engine isn't on this list is shown as
+  // "a search engine we don't recognise", never as harmful.
+  //
+  //   name          How the engine is shown to people
+  //   hostPatterns  Patterns for the web address's host. Exact, so "google.example.com" doesn't count as Google.
+
+  "engines": [
+    { "name": "Google", "hostPatterns": [ "^(www\\.)?google\\.(com|[a-z]{2}|co\\.[a-z]{2}|com\\.[a-z]{2})$" ] },
+    { "name": "Bing", "hostPatterns": [ "^(www\\.|cn\\.)?bing\\.com$" ] },
+    { "name": "DuckDuckGo", "hostPatterns": [ "^(www\\.|html\\.)?duckduckgo\\.com$" ] },
+    { "name": "Yahoo", "hostPatterns": [ "^([a-z]{2}\\.)?search\\.yahoo\\.com$" ] },
+    { "name": "Ecosia", "hostPatterns": [ "^(www\\.)?ecosia\\.org$" ] },
+    { "name": "Startpage", "hostPatterns": [ "^(www\\.)?startpage\\.com$" ] },
+    { "name": "Brave Search", "hostPatterns": [ "^search\\.brave\\.com$" ] },
+    { "name": "Qwant", "hostPatterns": [ "^(www\\.)?qwant\\.com$" ] },
+    { "name": "Mojeek", "hostPatterns": [ "^(www\\.)?mojeek\\.(com|co\\.uk)$" ] },
+    { "name": "Kagi", "hostPatterns": [ "^(www\\.)?kagi\\.com$" ] },
+    { "name": "Swisscows", "hostPatterns": [ "^(www\\.)?swisscows\\.com$" ] },
+    { "name": "Yandex", "hostPatterns": [ "^(www\\.)?yandex\\.(com|ru)$" ] },
+    { "name": "Baidu", "hostPatterns": [ "^(www\\.)?baidu\\.com$" ] },
+    { "name": "Microsoft Bing", "hostPatterns": [] },
+    { "name": "Wikipedia (en)", "hostPatterns": [ "^en\\.wikipedia\\.org$" ] }
+  ],
+
+  // Text in a search address showing it goes through another company's partner link first, which is
+  // how many unwanted add-ons earn money from your searches. "/yhs/" and "hspart=" are Yahoo's
+  // partner search links.
+  "partnerLinkSigns": [ "/yhs/", "hspart=" ]
+}

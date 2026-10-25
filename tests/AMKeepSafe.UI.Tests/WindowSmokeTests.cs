@@ -316,6 +316,92 @@ public class WindowSmokeTests
         Assert.Contains("Run a quick scan with Microsoft Defender", labels);
     });
 
+    private static async Task<(BrowserSamples Samples, BrowserCheckViewModel Vm)> CheckedBrowsersAsync()
+    {
+        var samples = new BrowserSamples("""
+            { "default_search_provider_data": { "template_url_data": { "short_name": "Super Search", "url": "https://supersearch.example/?q={searchTerms}" } },
+              "profile": { "content_settings": { "exceptions": { "notifications": { "https://virus-alert.example:443,*": { "setting": 1 } } } } } }
+            """);
+        samples.Registry.Set(AMKeepSafe.Core.Platform.RegistryRoot.LocalMachine, BrowserSamples.ChromePolicies, "HomepageLocation", "https://hijack.example");
+        var vm = samples.ViewModel();
+        await vm.CheckCommand.ExecuteAsync(null);
+        return (samples, vm);
+    }
+
+    [Fact]
+    public Task Main_window_with_the_browser_check_still_has_four_tabs_and_shows_it() => WpfHost.RunAsync(async () =>
+    {
+        var (samples, browsers) = await CheckedBrowsersAsync();
+        using var _ = samples;
+        var main = SampleChecks.MainWindowModel(SampleChecks.ViewModel(SampleChecks.Mixed()), browserCheck: browsers);
+        var window = new MainWindow { DataContext = main };
+        LayOut((FrameworkElement)window.Content);
+
+        Assert.Equal(4, FindAll<TabItem>(window).Count());
+        main.GoToTab(AppTab.BrowserCheck);
+        LayOut((FrameworkElement)window.Content);
+        Assert.Equal("Browser check", FindAll<TabControl>(window).Single().SelectedItem is TabItem t ? t.Header : null);
+        Assert.Single(FindAll<BrowserCheckView>(window));
+        window.Close();
+    });
+
+    [Theory]
+    [InlineData("browser-check-results", 1040, 2400)]
+    [InlineData("browser-check-results-small-laptop-150-percent", 853, 3000)]
+    public Task Browser_check_results_render(string name, double width, double height) => WpfHost.RunAsync(async () =>
+    {
+        var (samples, browsers) = await CheckedBrowsersAsync();
+        using var _ = samples;
+        var main = SampleChecks.MainWindowModel(SampleChecks.ViewModel(SampleChecks.Mixed()), browserCheck: browsers);
+        main.GoToTab(AppTab.BrowserCheck);
+        var window = new MainWindow { DataContext = main };
+
+        Assert.True(Screenshots.HasContent(Screenshots.Render(window, name, width, height)));
+        window.Close();
+    });
+
+    // Trust rule 2: the free fix sits on an amber result, so there must be no Pro prompt anywhere near it.
+    [Fact]
+    public Task Browser_check_tab_never_mentions_Pro_and_every_button_has_text() => WpfHost.RunAsync(async () =>
+    {
+        var (samples, browsers) = await CheckedBrowsersAsync();
+        using var _ = samples;
+        foreach (var result in browsers.Sections.SelectMany(s => s.Results).Where(r => r.HasSteps))
+        {
+            result.ToggleStepsCommand.Execute(null);
+        }
+
+        var view = new BrowserCheckView { DataContext = browsers, Width = 1040 };
+        view.Measure(new Size(1040, 8000));
+        view.Arrange(new Rect(0, 0, 1040, 8000));
+        view.UpdateLayout();
+
+        var words = AllText(view).ToList();
+        var labels = FindVisual<Button>(view).Select(b => b.Content as string).ToList();
+        Assert.Contains("Remove these settings", labels);
+        Assert.Contains("Open search settings", labels);
+        Assert.All(labels, l => Assert.False(string.IsNullOrWhiteSpace(l), "A browser result button has no text"));
+        Assert.DoesNotContain(words, w => System.Text.RegularExpressions.Regex.IsMatch(w, @"\bPro\b|licence|upgrade", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+    });
+
+    [Fact]
+    public void Choice_window_has_No_as_the_safe_default()
+    {
+        WpfHost.Run(() =>
+        {
+            // Built the way DialogService.Confirm builds it.
+            var window = new ChoiceWindow(new Choice("Close the browser now?", "Some words", PrimaryText: "Not now", SecondaryText: "Close Google Chrome now"));
+            LayOut((FrameworkElement)window.Content);
+
+            Assert.Equal("Not now", window.PrimaryButton.Content);
+            Assert.True(window.PrimaryButton.IsDefault);
+            Assert.Equal("Close Google Chrome now", window.SecondaryButton.Content);
+            Assert.Equal(Visibility.Visible, window.SecondaryButton.Visibility);
+            Assert.Equal(ChoiceResult.Closed, window.Result);
+            window.Close();
+        });
+    }
+
     [Fact]
     public void Message_window_shows_heading_and_text()
     {

@@ -24,6 +24,12 @@ public enum ChangeKind
     /// <summary>System Restore on a drive: on or off.</summary>
     SystemRestore,
 
+    /// <summary>A whole registry key and everything in it: present or absent. Backed up before it's removed.</summary>
+    RegistryKey,
+
+    /// <summary>A file: present or absent. Backed up before it's removed.</summary>
+    File,
+
     /// <summary>Something run once, such as a virus scan. Changes no setting.</summary>
     Task,
 }
@@ -81,6 +87,18 @@ public sealed record SettingChange
 
     public bool NeedsRestart { get; init; }
 
+    /// <summary>For a key or file being removed: what's in it, shown in the preview.</summary>
+    public IReadOnlyList<string> Contents { get; init; } = [];
+
+    /// <summary>Where the copy taken before removal is kept. Undo restores from this file (trust rule 5).</summary>
+    public string? BackupFile { get; init; }
+
+    public const string Present = "present";
+    public const string Absent = "absent";
+
+    /// <summary>True for removing a key or file, which must be backed up first.</summary>
+    public bool IsRemoval => Kind is ChangeKind.RegistryKey or ChangeKind.File && To == Absent;
+
     /// <summary>The exact change in technical terms, shown under "Exactly what changes" and written to the log.</summary>
     public string TechnicalDetail => Kind switch
     {
@@ -90,9 +108,13 @@ public sealed record SettingChange
         ChangeKind.DefenderRealTime => $"Microsoft Defender real-time protection: from {From ?? "unknown"} to {To}",
         ChangeKind.WindowsFeature => $"Windows optional feature \"{Target}\": from {From ?? "unknown"} to {To}",
         ChangeKind.SystemRestore => $"System Restore on drive {Target}: from {From ?? "unknown"} to {To}",
+        ChangeKind.RegistryKey => $@"Registry key {(Root == RegistryRoot.CurrentUser ? "HKCU" : "HKLM")}\{RegistryKey} and everything in it: from {From ?? "unknown"} to {To}{ContentsText}",
+        ChangeKind.File => $"File {Target}: from {From ?? "unknown"} to {To}{ContentsText}",
         ChangeKind.Task => $"Runs \"{Target}\" once. No settings change.",
         _ => $"{Kind} {Target}: from {From} to {To}",
     };
+
+    private string ContentsText => Contents.Count == 0 ? "" : $". It holds: {string.Join("; ", Contents)}";
 
     /// <summary>The change that puts things back. The description becomes the undo wording.</summary>
     public SettingChange Reversed() => this with
@@ -121,6 +143,12 @@ public sealed record SettingChange
         Add(data, "from", From);
         Add(data, "to", To);
         Add(data, "undoPage", UndoPage?.ToString());
+        Add(data, "backupFile", BackupFile);
+        if (Contents.Count > 0)
+        {
+            data["contents"] = string.Join("\n", Contents);
+        }
+
         return data;
     }
 
@@ -149,6 +177,8 @@ public sealed record SettingChange
             UndoDescription = data.GetValueOrDefault("undoDescription") ?? "",
             UndoPage = Enum.TryParse<WindowsSettingsPage>(data.GetValueOrDefault("undoPage"), out var page) ? page : null,
             NeedsRestart = bool.TryParse(data.GetValueOrDefault("needsRestart"), out var restart) && restart,
+            BackupFile = data.GetValueOrDefault("backupFile"),
+            Contents = data.GetValueOrDefault("contents")?.Split('\n') ?? [],
         };
     }
 

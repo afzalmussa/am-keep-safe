@@ -14,8 +14,9 @@ public class UndoServiceTests
     private readonly MemoryJournal _journal = new();
     private readonly MemoryLog _log = new();
     private readonly FakeTimeProvider _time = new(HealthyPc.Now);
+    private readonly TempDirectory _backups = new();
 
-    private FixRunner Runner(bool dryRun = false) => new(_changer, _journal, _log, _time, dryRun);
+    private FixRunner Runner(bool dryRun = false) => new(_changer, _journal, _log, _time, dryRun, _backups.Path);
 
     private UndoService Service(bool dryRun = false) => new(Runner(dryRun), _changer, _journal, Catalog.Common, _log, _time);
 

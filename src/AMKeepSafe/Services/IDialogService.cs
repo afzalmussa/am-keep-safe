@@ -15,4 +15,7 @@ public interface IDialogService
     bool ConfirmPreview(FixPreview preview);
 
     void ShowUndo(UndoViewModel undo);
+
+    /// <summary>A yes/no question. "No" is the default button, so pressing Enter is the safe choice.</summary>
+    bool Confirm(string heading, string body, string yesText, string noText);
 }

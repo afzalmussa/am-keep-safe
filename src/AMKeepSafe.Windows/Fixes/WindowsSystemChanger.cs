@@ -11,8 +11,10 @@ namespace AMKeepSafe.Windows.Fixes;
 /// Reads and changes Windows settings for the fixes and undo. Every value passed to PowerShell is
 /// quoted as a literal, and each kind of change only accepts its own fixed set of values.
 /// </summary>
-public sealed class WindowsSystemChanger(IPowerShellRunner powerShell, IRegistryReader registry) : ISystemChanger
+public sealed class WindowsSystemChanger(IPowerShellRunner powerShell, IRegistryReader registry, TimeProvider? time = null) : ISystemChanger
 {
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     private static readonly TimeSpan Quick = TimeSpan.FromMinutes(2);
 
     public async Task<string?> ReadAsync(SettingChange change, CancellationToken cancellationToken)
@@ -57,6 +59,16 @@ public sealed class WindowsSystemChanger(IPowerShellRunner powerShell, IRegistry
                     "Disabled" or "DisablePending" or "DisabledWithPayloadRemoved" => "Disabled",
                     _ => null,
                 };
+
+            case ChangeKind.RegistryKey:
+            {
+                using var baseKey = OpenBase(change.Root);
+                using var key = baseKey.OpenSubKey(change.RegistryKey!, writable: false);
+                return key is null ? SettingChange.Absent : SettingChange.Present;
+            }
+
+            case ChangeKind.File:
+                return File.Exists(change.Target) ? SettingChange.Present : SettingChange.Absent;
 
             case ChangeKind.SystemRestore:
                 return BackupCheck.Read(registry).SystemRestoreOn switch
@@ -112,6 +124,35 @@ public sealed class WindowsSystemChanger(IPowerShellRunner powerShell, IRegistry
                     $"Changing System Restore on {change.Target}", TimeSpan.FromMinutes(5), cancellationToken).ConfigureAwait(false);
                 break;
 
+            case ChangeKind.RegistryKey when change.To == SettingChange.Absent:
+            {
+                using var baseKey = OpenBase(change.Root);
+                baseKey.DeleteSubKeyTree(change.RegistryKey!, throwOnMissingSubKey: false);
+                break;
+            }
+
+            case ChangeKind.RegistryKey when change.To == SettingChange.Present:
+            {
+                var backup = RegistryKeyBackup.FromJson(await File.ReadAllTextAsync(RequireBackup(change), cancellationToken).ConfigureAwait(false));
+                if (!string.Equals(backup.Path, change.RegistryKey, StringComparison.OrdinalIgnoreCase) || backup.Root != change.Root)
+                {
+                    throw new InvalidDataException($"The backup is for {backup.Root}\\{backup.Path}, not {change.Root}\\{change.RegistryKey}.");
+                }
+
+                using var baseKey = OpenBase(change.Root);
+                Restore(baseKey, backup.Path, backup);
+                break;
+            }
+
+            case ChangeKind.File when change.To == SettingChange.Absent:
+                File.Delete(change.Target);
+                break;
+
+            case ChangeKind.File when change.To == SettingChange.Present:
+                Directory.CreateDirectory(Path.GetDirectoryName(change.Target)!);
+                File.Copy(RequireBackup(change), change.Target, overwrite: false);
+                break;
+
             case ChangeKind.Task when change.Target == QuickScanFix.TaskName:
                 await RunAsync("Start-MpScan -ScanType QuickScan -ErrorAction Stop", "Running a Microsoft Defender quick scan", TimeSpan.FromMinutes(60), cancellationToken).ConfigureAwait(false);
                 break;
@@ -122,6 +163,94 @@ public sealed class WindowsSystemChanger(IPowerShellRunner powerShell, IRegistry
 
             default:
                 throw new NotSupportedException($"Don't know how to make this change: {change.TechnicalDetail}");
+        }
+    }
+
+    public Task<string> BackupAsync(SettingChange change, string folder, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(folder);
+        var now = _time.GetUtcNow();
+        switch (change.Kind)
+        {
+            case ChangeKind.RegistryKey:
+            {
+                using var baseKey = OpenBase(change.Root);
+                using var key = baseKey.OpenSubKey(change.RegistryKey!, writable: false)
+                    ?? throw new InvalidOperationException($"There's nothing at {change.RegistryKey} to keep a copy of.");
+                var backup = Read(key, change.RegistryKey!) with { Root = change.Root ?? RegistryRoot.LocalMachine };
+                var path = Path.Combine(folder, RegistryKeyBackup.FileNameFor(now, $"{change.Root}-{change.RegistryKey}") + ".json");
+                File.WriteAllText(path, backup.ToJson());
+                return Task.FromResult(path);
+            }
+
+            case ChangeKind.File:
+            {
+                var path = Path.Combine(folder, RegistryKeyBackup.FileNameFor(now, change.Target) + Path.GetExtension(change.Target));
+                File.Copy(change.Target, path, overwrite: false);
+                return Task.FromResult(path);
+            }
+
+            default:
+                throw new NotSupportedException($"Only keys and files are copied before removal, not: {change.TechnicalDetail}");
+        }
+    }
+
+    private static string RequireBackup(SettingChange change) =>
+        change.BackupFile is { } file && File.Exists(file) ? file : throw new FileNotFoundException("The copy kept before removal is missing, so it can't be put back.", change.BackupFile);
+
+    private static RegistryKey OpenBase(RegistryRoot? root) =>
+        RegistryKey.OpenBaseKey(root == RegistryRoot.CurrentUser ? RegistryHive.CurrentUser : RegistryHive.LocalMachine, RegistryView.Registry64);
+
+    /// <summary>Copies a key and everything under it, keeping each value's type.</summary>
+    private static RegistryKeyBackup Read(RegistryKey key, string path)
+    {
+        var values = new List<RegistryValueBackup>();
+        foreach (var name in key.GetValueNames())
+        {
+            var kind = key.GetValueKind(name);
+            var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+            values.Add(kind switch
+            {
+                RegistryValueKind.MultiString => new RegistryValueBackup(name, kind.ToString(), null, (string[]?)value ?? []),
+                RegistryValueKind.Binary => new RegistryValueBackup(name, kind.ToString(), Convert.ToBase64String((byte[]?)value ?? [])),
+                RegistryValueKind.DWord or RegistryValueKind.QWord => new RegistryValueBackup(name, kind.ToString(), Convert.ToString(value, CultureInfo.InvariantCulture)),
+                _ => new RegistryValueBackup(name, kind.ToString(), value?.ToString()),
+            });
+        }
+
+        var subKeys = new List<RegistryKeyBackup>();
+        foreach (var name in key.GetSubKeyNames())
+        {
+            using var sub = key.OpenSubKey(name, writable: false);
+            if (sub is not null)
+            {
+                subKeys.Add(Read(sub, name));
+            }
+        }
+
+        return new RegistryKeyBackup { Path = path, Values = values, SubKeys = subKeys };
+    }
+
+    private static void Restore(RegistryKey parent, string path, RegistryKeyBackup backup)
+    {
+        using var key = parent.CreateSubKey(path, writable: true) ?? throw new InvalidOperationException($"Couldn't create {path}.");
+        foreach (var value in backup.Values)
+        {
+            var kind = Enum.Parse<RegistryValueKind>(value.Kind);
+            object data = kind switch
+            {
+                RegistryValueKind.MultiString => value.Strings?.ToArray() ?? [],
+                RegistryValueKind.Binary => Convert.FromBase64String(value.Data ?? ""),
+                RegistryValueKind.DWord => unchecked((int)long.Parse(value.Data ?? "0", CultureInfo.InvariantCulture)),
+                RegistryValueKind.QWord => long.Parse(value.Data ?? "0", CultureInfo.InvariantCulture),
+                _ => value.Data ?? "",
+            };
+            key.SetValue(value.Name, data, kind);
+        }
+
+        foreach (var sub in backup.SubKeys)
+        {
+            Restore(key, sub.Path, sub);
         }
     }
 

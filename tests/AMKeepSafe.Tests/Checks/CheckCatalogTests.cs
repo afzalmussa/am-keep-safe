@@ -96,7 +96,7 @@ public class CheckCatalogTests
     [Theory]
     [InlineData("\"info\": \"I\", ", "", "statusLabels has no label for Info")]
     [InlineData("\"summary\": \"Not fine.\"", "\"summary\": \"\"", "demo.bad has no summary")]
-    [InlineData("\"settingsPage\": \"windowsUpdate\"", "\"settingsPage\": \"windowsUpdate\", \"url\": \"https://example.com\"", "not both or neither")]
+    [InlineData("\"settingsPage\": \"windowsUpdate\"", "\"settingsPage\": \"windowsUpdate\", \"url\": \"https://example.com\"", "must do exactly one thing")]
     [InlineData("\"url\": \"https://example.com\"", "\"url\": \"http://example.com\"", "isn't a secure https address")]
     [InlineData("\"title\": \"Demo\"", "\"title\": \"\"", "needs an id, a title and whatWeCheck")]
     public void Validation_catches_mistakes(string find, string replace, string expected)

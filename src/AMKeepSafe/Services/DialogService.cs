@@ -21,6 +21,10 @@ public sealed class DialogService : IDialogService
         window.ShowDialog();
     }
 
+    public bool Confirm(string heading, string body, string yesText, string noText) =>
+        // The main (default) button is the safe "no", so pressing Enter never does the risky thing.
+        ChoiceWindow.Show(ActiveWindow(), new Choice(heading, body, PrimaryText: noText, SecondaryText: yesText)) == ChoiceResult.Secondary;
+
     private static Window? ActiveWindow() =>
         Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
 }

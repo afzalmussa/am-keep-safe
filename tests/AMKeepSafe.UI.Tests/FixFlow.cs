@@ -19,7 +19,7 @@ internal sealed class FixFlow
         Changer.Set(ChangeKind.FirewallProfile, "Domain", "on").Set(ChangeKind.FirewallProfile, "Private", "on").Set(ChangeKind.FirewallProfile, "Public", "off")
             .Set(ChangeKind.RegistryValue, "fDenyTSConnections", "0", AMKeepSafe.Core.Platform.RegistryRoot.LocalMachine, TerminalServer);
 
-        Runner = new FixRunner(Changer, Journal, Log, TimeProvider.System, dryRun);
+        Runner = new FixRunner(Changer, Journal, Log, TimeProvider.System, dryRun, System.IO.Path.Combine(System.IO.Path.GetTempPath(), "amkeepsafe-ui-backups"));
         Coordinator = new FixCoordinator(FixSet.Create(Changer, "C:"), FixCatalog, Runner, Dialogs, Log);
         Undo = new UndoViewModel(new UndoService(Runner, Changer, Journal, FixCatalog.Common, Log, TimeProvider.System), FixCatalog.Common, Dialogs, Shell, Log);
     }

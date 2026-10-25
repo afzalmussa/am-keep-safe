@@ -208,7 +208,7 @@ public sealed class SystemRestoreOnFix(ISystemChanger changer, string systemDriv
 public static class FixSet
 {
     /// <summary>Every fix the app offers. Which result each one appears under comes from fixes.json.</summary>
-    public static IReadOnlyList<IFix> Create(ISystemChanger changer, string systemDrive) =>
+    public static IReadOnlyList<IFix> Create(ISystemChanger changer, string systemDrive, Browsers.BrowserPolicyReader? policies = null) =>
     [
         new FirewallOnFix(changer),
         new UacOnFix(changer),
@@ -219,5 +219,8 @@ public static class FixSet
         new RemoteDesktopOffFix(changer),
         new Smb1OffFix(changer),
         new SystemRestoreOnFix(changer, systemDrive),
+        .. (policies is null
+            ? Array.Empty<IFix>()
+            : Enum.GetValues<Browsers.Browser>().Select(b => (IFix)new RemoveBrowserPoliciesFix(b, policies))),
     ];
 }

@@ -140,9 +140,9 @@ public sealed partial class CheckCatalog
                 problems.Add($"{where} has a button with no label.");
             }
 
-            if ((action.SettingsPage is null) == (action.Url is null))
+            if (action.TargetCount != 1)
             {
-                problems.Add($"{where} button '{action.Label}' must have either a settingsPage or a url, not both or neither.");
+                problems.Add($"{where} button '{action.Label}' must do exactly one thing: a settingsPage, a url, a browserPage or an appTab.");
             }
 
             if (action.Url is not null && !AppSettings.IsUsableUrl(action.Url))

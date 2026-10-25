@@ -86,7 +86,29 @@ Rules 2, 4, 6, 7 and 8 get their enforcement as the features they apply to are b
 
 **Wording** for fixes, the preview, results and the undo list is in `data/fixes.json`, checked by the same wording tests as `checks.json`.
 
+## Phase 4: the Browser check
+
+**Read only, apart from one fix.** The Browser check reads Microsoft Edge, Google Chrome and Firefox for the Windows account the app runs as: every profile, its search engine and start pages, its add-ons, and which websites may send notifications. Chrome and Edge profile files (`Local State`, `Preferences`, `Secure Preferences`, add-on manifests) are only ever read, never written. Firefox's settings are read from `prefs.js`, `extensions.json`, `extension-settings.json`, `search.json.mozlz4` (decoded by a small LZ4 reader in Core) and `permissions.sqlite`, which is copied to a temporary file first so a running Firefox never sees it opened. A test checks that reading a profile leaves its files byte for byte and timestamp for timestamp as they were.
+
+**What gets flagged, and how.** A search engine not on `data/search-engines.json`, or a well-known one reached through another company's link (`/yhs/`, `hspart=`), is amber. A search engine or start page set by an add-on names that add-on. Add-ons from outside the official store, or forced on by a policy, are amber with "Do you recognise this?", never called harmful. Only an add-on on `data/extensions-known-bad.json` is red. Notification permissions are blue, with a note that a real virus warning never comes from a website.
+
+**Fixes are either "Remove these settings" or the browser's own page.** "Managed by your organisation" policies (the registry keys under `SOFTWARE\Policies` for the whole PC and for this account, and Firefox's `distribution\policies.json`) can be removed in the app. Everything else opens the right page in that browser (`edge://`, `chrome://` or `about:` addresses in `data/browser-check.json`) with short steps. The app never edits a profile, so it can't break one.
+
+**Removing policies, trust rules 5 and 6.** A whole key or file is a new kind of change. `FixRunner` backs it up before removing it, as readable JSON for a registry key (every value with its exact type, and every key under it) or a straight copy for a file, into `%ProgramData%\AMSoftware\KeepSafe\backups`. If the copy can't be made, nothing is removed. The undo list records where the copy is, and Undo puts it back from there, refusing a copy made for a different key. `ProtectionGuard.Allows` only lets whole keys or files be removed or restored at the three browser policy keys and a `policies.json` inside a Firefox install folder, so this power can't reach anything else.
+
+**Closing the browser.** Policies only take effect when the browser restarts. After removing them, if the browser is open, the app asks first ("Not now" is the default button), then closes it the polite way, as if each window's close button were clicked, so the browser can offer to restore tabs. It never forces a browser closed. If it's still open after 15 seconds, the person is asked to close it themselves.
+
+**Work and school PCs.** If the PC is joined to a domain, to Microsoft Entra (Azure AD) or to a device management service, policies are probably deliberate. They show as blue information with no button, and the person is asked to check with whoever looks after the PC.
+
+**Decided: the wrong account's browsers (the open question from phase 3).** The app now detects when it is running as a different account from the person signed in to Windows (someone approved the administrator prompt with another account). The Browser check then says whose browsers it checked and how to check the right ones. It doesn't try to read the other account's profile, because that would mean reading another person's files.
+
+**The Safety check gets a "Browsers" row.** It runs the same browser check and shows one summary result, with a button that moves to the Browser check tab, where the full results are already waiting.
+
+**Not yet confirmed: the known-bad add-on list.** The seven ids in `data/extensions-known-bad.json` came from search results quoting security reports, because the reports themselves couldn't be opened from the build environment. Each is marked `"confirmed": false`. They need checking against their source reports before release. Until then the list is short on purpose: a wrong id would call an honest add-on harmful.
+
 ## Open questions
 
-- **Settings read for the wrong person.** The app runs as administrator. If someone signed in as a standard user approves the prompt with a different administrator account, "current user" settings (OneDrive folders, and in phase 4 browser settings) are read from the administrator's profile, not theirs. Most home PCs sign in as an administrator, so this rarely applies. Phase 4 needs a decision on whether to detect it and say so.
+- **OneDrive folders for the wrong person.** The Browser check now says when it's checking a different account (see phase 4). The Safety check's OneDrive backup result doesn't yet, so on a PC where a standard user approves the prompt with another account it reads the administrator's OneDrive. Decide in a later phase whether to add the same note there.
+- **Browser page addresses.** The `edge://` addresses in `data/browser-check.json`, and whether Chrome and Edge open an internal page when it's given on the command line, need checking on a real PC. If one doesn't open, the app shows the address so the person can type it in.
+- **Known-bad add-on ids** need confirming against their sources (see phase 4).
 - **Windows 11 support dates** in `checks.json` come from Microsoft's notices as reported in October 2026, because learn.microsoft.com couldn't be reached from the build environment. Recheck them on Microsoft's release health page before release.

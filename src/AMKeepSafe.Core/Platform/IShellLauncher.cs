@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Browsers;
 using AMKeepSafe.Core.Checks;
 
 namespace AMKeepSafe.Core.Platform;
@@ -15,4 +16,7 @@ public interface IShellLauncher
 
     /// <summary>Opens one of a fixed list of Windows settings pages.</summary>
     bool OpenSettings(WindowsSettingsPage page);
+
+    /// <summary>Opens one of the browser's own pages, such as chrome://extensions, in that browser.</summary>
+    bool OpenBrowserPage(Browser browser, string address);
 }

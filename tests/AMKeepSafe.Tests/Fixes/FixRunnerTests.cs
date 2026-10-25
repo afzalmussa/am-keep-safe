@@ -30,8 +30,9 @@ public class FixRunnerTests
     private readonly MemoryJournal _journal = new();
     private readonly MemoryLog _log = new();
     private readonly FakeTimeProvider _time = new(HealthyPc.Now);
+    private readonly TempDirectory _backups = new();
 
-    private FixRunner Runner(bool dryRun = false) => new(_changer, _journal, _log, _time, dryRun);
+    private FixRunner Runner(bool dryRun = false) => new(_changer, _journal, _log, _time, dryRun, _backups.Path);
 
     private static FixPreview Confirmed(params SettingChange[] changes)
     {
@@ -140,7 +141,7 @@ public class FixRunnerTests
     public async Task Some_done_and_some_not_is_partly_done()
     {
         var refusesFirewall = new RefusingChanger(_changer, ChangeKind.FirewallProfile);
-        var runner = new FixRunner(refusesFirewall, _journal, _log, _time, dryRun: false);
+        var runner = new FixRunner(refusesFirewall, _journal, _log, _time, dryRun: false, _backups.Path);
 
         var result = await runner.ApplyAsync(Confirmed(RemoteDesktopOff, FirewallPublicOn));
 
@@ -188,6 +189,8 @@ public class FixRunnerTests
 
     private sealed class RefusingChanger(ISystemChanger inner, ChangeKind refuse) : ISystemChanger
     {
+        public Task<string> BackupAsync(SettingChange change, string folder, CancellationToken cancellationToken) => inner.BackupAsync(change, folder, cancellationToken);
+
         public Task<string?> ReadAsync(SettingChange change, CancellationToken cancellationToken) => inner.ReadAsync(change, cancellationToken);
 
         public Task ApplyAsync(SettingChange change, CancellationToken cancellationToken) =>

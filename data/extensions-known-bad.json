@@ -1,0 +1,24 @@
+{
+  // Edge and Chrome add-ons removed from the Chrome Web Store after security researchers found they
+  // were harmful. Removal from the store doesn't uninstall them, so they can still be on a PC.
+  //
+  //   id         The add-on's 32-letter id, as shown on the browser's extensions page
+  //   name       Its name when it was found
+  //   source     The report that names it
+  //   confirmed  false until someone has checked the id against the source report itself
+  //
+  // These ids come from search results quoting the reports below, because the reports couldn't be
+  // opened from the build environment. Check each one against its source before release.
+  // Add-ons that were only harmful for a single hacked version (such as the December 2024 Cyberhaven
+  // campaign) are left out on purpose: their current versions are honest.
+
+  "extensions": [
+    { "id": "mdaboflcmhejfihjcbmdiebgfchigjcf", "name": "Unnamed in search results", "source": "https://gitlab-com.gitlab.io/gl-security/security-tech-notes/threat-intelligence-tech-notes/malicious-browser-extensions-feb-2025/", "confirmed": false },
+    { "id": "gaoflciahikhligngeccdecgfjngejlh", "name": "Unnamed in search results", "source": "https://gitlab-com.gitlab.io/gl-security/security-tech-notes/threat-intelligence-tech-notes/malicious-browser-extensions-feb-2025/", "confirmed": false },
+    { "id": "fedimamkpgiemhacbdhkkaihgofncola", "name": "Unnamed in search results", "source": "https://gitlab-com.gitlab.io/gl-security/security-tech-notes/threat-intelligence-tech-notes/malicious-browser-extensions-feb-2025/", "confirmed": false },
+    { "id": "jlhgcomgldfapimdboelilfcipigkgik", "name": "Unnamed in search results", "source": "https://gitlab-com.gitlab.io/gl-security/security-tech-notes/threat-intelligence-tech-notes/malicious-browser-extensions-feb-2025/", "confirmed": false },
+    { "id": "jdjldbengpgdcfkljfdmakdgmfpneldd", "name": "Unnamed in search results", "source": "https://gitlab-com.gitlab.io/gl-security/security-tech-notes/threat-intelligence-tech-notes/malicious-browser-extensions-feb-2025/", "confirmed": false },
+    { "id": "kgmeffmlnkfnjpgmdndccklfigfhajen", "name": "Emoji keyboard online", "source": "https://www.bleepingcomputer.com/news/security/malicious-chrome-extensions-with-17m-installs-found-on-web-store/", "confirmed": false },
+    { "id": "dpdibkjjgbaadnnjhkmmnenkmbnhpobj", "name": "Free Weather Forecast", "source": "https://www.bleepingcomputer.com/news/security/malicious-chrome-extensions-with-17m-installs-found-on-web-store/", "confirmed": false }
+  ]
+}

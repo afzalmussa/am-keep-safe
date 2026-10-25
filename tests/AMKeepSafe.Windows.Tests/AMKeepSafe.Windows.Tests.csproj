@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Integration tests that read real Windows settings through real PowerShell and the registry.
-       Windows only, run by CI on the Windows runner. Nothing here changes the PC. -->
+       Windows only, run by CI on the Windows runner. Nothing here changes a setting the PC uses:
+       the remove-and-restore tests work on a scratch key under HKCU\Software\AMKeepSafe.Tests and a
+       temporary folder, and delete both when they finish. -->
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>

@@ -163,6 +163,73 @@
       },
       "doneText": "System Restore is on.",
       "failedText": "Windows didn't allow System Restore to be turned on. You can do it yourself with \"Open System Restore settings\". The details are in the log."
+    },
+    {
+      "id": "remove-policies-edge",
+      "checkId": "edge-managed",
+      "forOutcomes": [
+        "present"
+      ],
+      "buttonLabel": "Remove these settings",
+      "title": "Remove the settings controlling Microsoft Edge",
+      "changes": {
+        "machine": {
+          "text": "Remove the settings controlling Microsoft Edge for everyone on this PC",
+          "undoText": "Put back the settings controlling Microsoft Edge for everyone on this PC"
+        },
+        "account": {
+          "text": "Remove the settings controlling Microsoft Edge for this Windows account",
+          "undoText": "Put back the settings controlling Microsoft Edge for this Windows account"
+        }
+      },
+      "doneText": "Done. Close Microsoft Edge and open it again for the change to take effect. A copy of the settings is kept, so you can put them back from \"Undo changes\".",
+      "failedText": "Windows didn't allow the settings controlling Microsoft Edge to be removed. The details are in the log."
+    },
+    {
+      "id": "remove-policies-chrome",
+      "checkId": "chrome-managed",
+      "forOutcomes": [
+        "present"
+      ],
+      "buttonLabel": "Remove these settings",
+      "title": "Remove the settings controlling Google Chrome",
+      "changes": {
+        "machine": {
+          "text": "Remove the settings controlling Google Chrome for everyone on this PC",
+          "undoText": "Put back the settings controlling Google Chrome for everyone on this PC"
+        },
+        "account": {
+          "text": "Remove the settings controlling Google Chrome for this Windows account",
+          "undoText": "Put back the settings controlling Google Chrome for this Windows account"
+        }
+      },
+      "doneText": "Done. Close Google Chrome and open it again for the change to take effect. A copy of the settings is kept, so you can put them back from \"Undo changes\".",
+      "failedText": "Windows didn't allow the settings controlling Google Chrome to be removed. The details are in the log."
+    },
+    {
+      "id": "remove-policies-firefox",
+      "checkId": "firefox-managed",
+      "forOutcomes": [
+        "present"
+      ],
+      "buttonLabel": "Remove these settings",
+      "title": "Remove the settings controlling Firefox",
+      "changes": {
+        "machine": {
+          "text": "Remove the settings controlling Firefox for everyone on this PC",
+          "undoText": "Put back the settings controlling Firefox for everyone on this PC"
+        },
+        "account": {
+          "text": "Remove the settings controlling Firefox for this Windows account",
+          "undoText": "Put back the settings controlling Firefox for this Windows account"
+        },
+        "file": {
+          "text": "Remove Firefox's policies file, which also controls it",
+          "undoText": "Put back Firefox's policies file"
+        }
+      },
+      "doneText": "Done. Close Firefox and open it again for the change to take effect. A copy of the settings is kept, so you can put them back from \"Undo changes\".",
+      "failedText": "Windows didn't allow the settings controlling Firefox to be removed. The details are in the log."
     }
   ]
 }

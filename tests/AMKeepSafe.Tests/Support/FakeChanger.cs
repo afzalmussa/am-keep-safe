@@ -16,6 +16,11 @@ public sealed class FakeChanger : ISystemChanger
     /// <summary>Makes ApplyAsync quietly do nothing, as when Tamper Protection ignores a change.</summary>
     public bool Ignore { get; set; }
 
+    /// <summary>Makes BackupAsync throw, as when the backup folder can't be written.</summary>
+    public bool FailBackup { get; set; }
+
+    public List<string> Backups { get; } = [];
+
     /// <summary>Called just before each change is made, to look at the world at that moment.</summary>
     public Action<SettingChange>? BeforeApply { get; set; }
 
@@ -32,9 +37,29 @@ public sealed class FakeChanger : ISystemChanger
     public Task<string?> ReadAsync(SettingChange change, CancellationToken cancellationToken) =>
         Task.FromResult(change.Kind == ChangeKind.Task ? null : _values.GetValueOrDefault(Identity(change)));
 
+    public Task<string> BackupAsync(SettingChange change, string folder, CancellationToken cancellationToken)
+    {
+        if (FailBackup)
+        {
+            throw new IOException("Backup folder is full.");
+        }
+
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, $"backup-{Backups.Count + 1}.json");
+        File.WriteAllText(path, Identity(change));
+        Backups.Add(path);
+        return Task.FromResult(path);
+    }
+
     public Task ApplyAsync(SettingChange change, CancellationToken cancellationToken)
     {
         BeforeApply?.Invoke(change);
+        if (change.To == SettingChange.Present && change.Kind is ChangeKind.RegistryKey or ChangeKind.File
+            && (change.BackupFile is null || !File.Exists(change.BackupFile)))
+        {
+            throw new FileNotFoundException("No backup to restore from.");
+        }
+
         if (Refuse)
         {
             throw new InvalidOperationException("Windows refused.");

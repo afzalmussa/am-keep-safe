@@ -21,8 +21,8 @@ public static partial class UserFacingText
     private static readonly string[] XamlTextAttributes =
         ["Text", "Content", "Header", "ToolTip", "Title", "AutomationProperties.Name", "AutomationProperties.HelpText"];
 
-    // Keys in data files that hold names and ids rather than sentences.
-    private static readonly HashSet<string> DataKeysToSkip = new(StringComparer.OrdinalIgnoreCase) { "id", "$schema" };
+    // Keys in data files that hold ids and reference links rather than sentences people see.
+    private static readonly HashSet<string> DataKeysToSkip = new(StringComparer.OrdinalIgnoreCase) { "id", "$schema", "source" };
 
     public static IEnumerable<TextSample> FromScreens()
     {
