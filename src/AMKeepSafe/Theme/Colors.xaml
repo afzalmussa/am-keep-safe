@@ -30,6 +30,20 @@
     <SolidColorBrush x:Key="FocusBrush" Color="#1B1C2B" />
     <SolidColorBrush x:Key="OnDarkFocusBrush" Color="#34D399" />
 
+    <!-- Result colours. Calm shades, never colour alone: every status also has its own icon shape and a
+         text label. Each text colour is checked by the tests for at least 4.5:1 contrast on white and on
+         its own background. -->
+    <SolidColorBrush x:Key="StatusGoodBrush" Color="#0B6E4A" />
+    <SolidColorBrush x:Key="StatusGoodBackgroundBrush" Color="#E7F5EF" />
+    <SolidColorBrush x:Key="StatusAttentionBrush" Color="#8A4B00" />
+    <SolidColorBrush x:Key="StatusAttentionBackgroundBrush" Color="#FFF4D6" />
+    <SolidColorBrush x:Key="StatusProblemBrush" Color="#A12A1E" />
+    <SolidColorBrush x:Key="StatusProblemBackgroundBrush" Color="#FDECEA" />
+    <SolidColorBrush x:Key="StatusInfoBrush" Color="#1F4E8C" />
+    <SolidColorBrush x:Key="StatusInfoBackgroundBrush" Color="#E8EEF8" />
+    <SolidColorBrush x:Key="StatusUnknownBrush" Color="#4A4C66" />
+    <SolidColorBrush x:Key="StatusUnknownBackgroundBrush" Color="#EEEFF5" />
+
     <!-- Fonts. JetBrains Mono is bundled under the SIL Open Font Licence; Segoe UI is the fallback. -->
     <FontFamily x:Key="BodyFont">Segoe UI</FontFamily>
     <FontFamily x:Key="HeadingFont">pack://application:,,,/AMKeepSafe;component/Fonts/#JetBrains Mono, Segoe UI</FontFamily>

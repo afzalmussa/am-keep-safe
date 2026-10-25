@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Configuration\appsettings.json" LogicalName="AMKeepSafe.Core.appsettings.json" />
+    <!-- The data files ship inside the app, so what's in the repo is exactly what the app says. -->
+    <EmbeddedResource Include="..\..\data\*.json" LogicalName="AMKeepSafe.Core.Data.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

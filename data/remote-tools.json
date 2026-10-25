@@ -1,0 +1,36 @@
+{
+  // Remote control apps listed on the Safety check. These have honest uses, so they're shown as
+  // information only ("Do you recognise this?") and never called harmful.
+  //
+  //   name            How the app is shown to people
+  //   installedNames  Text to look for in Windows' list of installed apps (capitals don't matter)
+  //   notNames        Installed apps containing this text are something else from the same company
+  //   programs        Program file names to look for among what's running. Catches copies that
+  //                   run without being installed, which scammers often use.
+  //   onlyWhenOpen    Built into Windows, so only mentioned while it's open
+
+  "tools": [
+    { "name": "AnyDesk", "installedNames": [ "AnyDesk" ], "programs": [ "AnyDesk.exe" ] },
+    { "name": "TeamViewer", "installedNames": [ "TeamViewer" ], "programs": [ "TeamViewer.exe", "TeamViewer_Service.exe", "TeamViewerQS.exe" ] },
+    { "name": "UltraViewer", "installedNames": [ "UltraViewer" ], "programs": [ "UltraViewer_Desktop.exe", "UltraViewer_Service.exe" ] },
+    { "name": "RustDesk", "installedNames": [ "RustDesk" ], "programs": [ "rustdesk.exe" ] },
+    { "name": "Quick Assist", "programs": [ "QuickAssist.exe" ], "onlyWhenOpen": true },
+    { "name": "ScreenConnect", "installedNames": [ "ScreenConnect", "ConnectWise Control" ], "programs": [ "ScreenConnect.ClientService.exe", "ScreenConnect.WindowsClient.exe" ] },
+    { "name": "LogMeIn", "installedNames": [ "LogMeIn" ], "notNames": [ "Hamachi" ], "programs": [ "LogMeIn.exe", "LMIGuardianSvc.exe" ] },
+    { "name": "GoTo Resolve", "installedNames": [ "GoTo Resolve", "LogMeIn Rescue" ] },
+    { "name": "Splashtop", "installedNames": [ "Splashtop" ] },
+    { "name": "Chrome Remote Desktop", "installedNames": [ "Chrome Remote Desktop Host" ], "programs": [ "remoting_host.exe" ] },
+    { "name": "AnyViewer", "installedNames": [ "AnyViewer" ], "programs": [ "AnyViewer.exe" ] },
+    { "name": "Supremo", "installedNames": [ "Supremo" ], "programs": [ "Supremo.exe", "SupremoService.exe" ] },
+    { "name": "RemotePC", "installedNames": [ "RemotePC" ] },
+    { "name": "Zoho Assist", "installedNames": [ "Zoho Assist" ] },
+    { "name": "Ammyy Admin", "installedNames": [ "Ammyy" ], "programs": [ "AA_v3.exe" ] },
+    { "name": "Remote Utilities", "installedNames": [ "Remote Utilities" ], "programs": [ "rutserv.exe", "rfusclient.exe" ] },
+    { "name": "NetSupport", "installedNames": [ "NetSupport" ], "programs": [ "client32.exe" ] },
+    { "name": "AeroAdmin", "installedNames": [ "AeroAdmin" ], "programs": [ "AeroAdmin.exe" ] },
+    { "name": "HopToDesk", "installedNames": [ "HopToDesk" ], "programs": [ "HopToDesk.exe" ] },
+    { "name": "Iperius Remote", "installedNames": [ "Iperius Remote" ], "programs": [ "IperiusRemote.exe" ] },
+    { "name": "DWService", "installedNames": [ "DWAgent" ] },
+    { "name": "Getscreen.me", "installedNames": [ "Getscreen.me" ] }
+  ]
+}

@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Media;
+using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Configuration;
 using AMKeepSafe.ViewModels;
 using AMKeepSafe.Views;
@@ -181,6 +183,72 @@ public class WindowSmokeTests
     }
 
     [Fact]
+    public void Safety_check_tab_shows_the_Check_my_PC_button_before_checking()
+    {
+        WpfHost.Run(() =>
+        {
+            var window = new MainWindow { DataContext = SampleChecks.MainWindowModel(SampleChecks.ViewModel(SampleChecks.Mixed())) };
+            LayOut((FrameworkElement)window.Content);
+
+            var view = FindAll<SafetyCheckView>(window).Single();
+            LayOut(view);
+            Assert.Contains(FindVisual<Button>(view), b => (b.Content as string) == "Check my PC");
+            window.Close();
+        });
+    }
+
+    [Theory]
+    [InlineData("safety-check-results", 1040, 1900)]
+    [InlineData("safety-check-results-small-laptop-150-percent", 853, 2600)]
+    public Task Safety_check_results_render_with_every_colour(string name, double width, double height) => WpfHost.RunAsync(async () =>
+    {
+        var safetyCheck = SampleChecks.ViewModel(SampleChecks.Mixed());
+        await safetyCheck.CheckCommand.ExecuteAsync(null);
+        safetyCheck.Results.First(r => r.HasSteps).ToggleStepsCommand.Execute(null);
+        var window = new MainWindow { DataContext = SampleChecks.MainWindowModel(safetyCheck) };
+
+        Assert.True(Screenshots.HasContent(Screenshots.Render(window, name, width, height)));
+        window.Close();
+    });
+
+    // Trust rule 2: no Pro prompt anywhere on the Safety check tab, even when results are red or amber.
+    [Fact]
+    public Task Safety_check_tab_never_mentions_Pro_even_with_red_and_amber_results() => WpfHost.RunAsync(async () =>
+    {
+        var safetyCheck = SampleChecks.ViewModel(SampleChecks.Mixed());
+        await safetyCheck.CheckCommand.ExecuteAsync(null);
+        foreach (var result in safetyCheck.Results.Where(r => r.HasSteps))
+        {
+            result.ToggleStepsCommand.Execute(null);
+        }
+
+        var view = new SafetyCheckView { DataContext = safetyCheck, Width = 1040 };
+        view.Measure(new Size(1040, 6000));
+        view.Arrange(new Rect(0, 0, 1040, 6000));
+        view.UpdateLayout();
+
+        Assert.Contains(safetyCheck.Results, r => r.Status.NeedsAction());
+        var words = AllText(view).ToList();
+        Assert.Contains(words, w => w.Contains("firewall", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(words, w => System.Text.RegularExpressions.Regex.IsMatch(w, @"\bPro\b|licence|upgrade", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+    });
+
+    [Fact]
+    public Task Every_result_button_has_a_name_a_screen_reader_can_read() => WpfHost.RunAsync(async () =>
+    {
+        var safetyCheck = SampleChecks.ViewModel(SampleChecks.Mixed());
+        await safetyCheck.CheckCommand.ExecuteAsync(null);
+        var view = new SafetyCheckView { DataContext = safetyCheck };
+        view.Measure(new Size(1040, 6000));
+        view.Arrange(new Rect(0, 0, 1040, 6000));
+        view.UpdateLayout();
+
+        var buttons = FindVisual<Button>(view).ToList();
+        Assert.True(buttons.Count > 5);
+        Assert.All(buttons, b => Assert.False(string.IsNullOrWhiteSpace(b.Content as string), "A result button has no text"));
+    });
+
+    [Fact]
     public void Message_window_shows_heading_and_text()
     {
         WpfHost.Run(() =>
@@ -194,6 +262,29 @@ public class WindowSmokeTests
             window.Close();
         });
     }
+
+    // Walks the visual tree, which includes items drawn from templates once layout has run.
+    private static IEnumerable<T> FindVisual<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+            {
+                yield return match;
+            }
+
+            foreach (var nested in FindVisual<T>(child))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private static IEnumerable<string> AllText(DependencyObject root) =>
+        FindVisual<TextBlock>(root).Select(t => t.Text)
+            .Concat(FindVisual<ContentPresenter>(root).Select(c => c.Content as string ?? ""))
+            .Where(t => t.Length > 0);
 
     // Walks the logical tree, which exists before the window is shown on screen.
     private static IEnumerable<T> FindAll<T>(DependencyObject root) where T : DependencyObject

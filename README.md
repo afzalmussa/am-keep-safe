@@ -33,7 +33,29 @@ This section will be written in full before the first release. In short:
 
 ## What it checks
 
-Coming in the next version. The full list, with the exact wording the app uses, will live in [`data/checks.json`](data/checks.json).
+Click **Check my PC** and AM Keep Safe looks at these things. It only looks: nothing is changed.
+
+| Check | What it looks at |
+| --- | --- |
+| Windows updates | Whether Windows Update is switched on, when updates last installed, and whether any are waiting |
+| Windows version | Whether this version of Windows still gets security updates, including Windows 10's Extended Security Updates |
+| Antivirus | Which antivirus is on, whether Microsoft Defender is checking files as you use them, and how up to date it is |
+| Firewall | Whether the firewall is on for home, work and public networks |
+| Permission prompts | Whether Windows asks before apps make changes (User Account Control) |
+| Drive encryption | Whether your drive is encrypted, and a reminder to know where your recovery key is |
+| Backups | Is your stuff backed up? File History, OneDrive folder backup and System Restore |
+| Remote Desktop | Whether other computers can connect to this one |
+| Old file sharing (SMB1) | Whether a very old, weak way of sharing files is switched on |
+| Remote control apps | Apps like AnyDesk and TeamViewer, listed so you can say whether you recognise them |
+| Secure Boot and security chip | Shown for information only |
+
+Each result is green ("Looks fine"), amber ("Worth a look"), red ("Needs your attention"), blue ("For your information") or grey ("Couldn't check"), with its own icon and words as well as its colour. Each one says what it means in a sentence or two, and red and amber results say how to fix them.
+
+When nothing needs attention, AM Keep Safe says "No problems found in the things we checked." It never says your PC "is safe", because no checklist can promise that.
+
+Every word the check uses, and the rules that decide each colour, are in [`data/checks.json`](data/checks.json). The list of remote control apps is in [`data/remote-tools.json`](data/remote-tools.json).
+
+<!-- Screenshot: a result opened to show its "How to fix" steps. -->
 
 ## Free and Pro
 

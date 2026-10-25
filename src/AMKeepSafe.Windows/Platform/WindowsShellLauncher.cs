@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Configuration;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Core.Platform;
@@ -46,6 +47,32 @@ public sealed class WindowsShellLauncher(IAppLog log) : IShellLauncher
         info.ArgumentList.Add(path);
         return Start(info, $"folder {path}");
     }
+
+    public bool OpenSettings(WindowsSettingsPage page)
+    {
+        var (target, isProgram) = SettingsTarget(page);
+        var info = isProgram
+            ? new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), target)) { UseShellExecute = false }
+            : new ProcessStartInfo(target) { UseShellExecute = true };
+        return Start(info, $"Windows settings page {page}");
+    }
+
+    /// <summary>Where each page lives: a settings address, or a program in the Windows system folder.</summary>
+    public static (string Target, bool IsProgram) SettingsTarget(WindowsSettingsPage page) => page switch
+    {
+        WindowsSettingsPage.WindowsUpdate => ("ms-settings:windowsupdate", false),
+        WindowsSettingsPage.VirusProtection => ("windowsdefender://threat", false),
+        WindowsSettingsPage.Firewall => ("windowsdefender://network", false),
+        WindowsSettingsPage.DeviceSecurity => ("windowsdefender://devicesecurity", false),
+        WindowsSettingsPage.DeviceEncryption => ("ms-settings:deviceencryption", false),
+        WindowsSettingsPage.RemoteDesktop => ("ms-settings:remotedesktop", false),
+        WindowsSettingsPage.Backup => ("ms-settings:backup", false),
+        WindowsSettingsPage.InstalledApps => ("ms-settings:appsfeatures", false),
+        WindowsSettingsPage.SystemProtection => ("SystemPropertiesProtection.exe", true),
+        WindowsSettingsPage.UserAccountControl => ("UserAccountControlSettings.exe", true),
+        WindowsSettingsPage.WindowsFeatures => ("OptionalFeatures.exe", true),
+        _ => throw new ArgumentOutOfRangeException(nameof(page), page, null),
+    };
 
     private bool Start(ProcessStartInfo info, string what)
     {

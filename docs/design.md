@@ -45,6 +45,26 @@ The product brief is the spec. This file records the decisions made while turnin
 
 Rules 2, 4, 6, 7 and 8 get their enforcement as the features they apply to are built.
 
+**Undo against rule 6 (decided after phase 1).** Undoing a fix that switched a protection on (firewall, User Account Control, Defender real-time protection, the Windows Update service) would switch it off again, which rule 6 forbids. For those, the undo screen explains the change and opens the right Windows Settings page, so the person can change it back themselves if they really need to. Every other change (Remote Desktop, SMB1, browser policies) undoes inside the app.
+
+## Phase 2: the Safety check
+
+**How a check works.** Each check gathers facts (from the registry, or from a PowerShell script in the Windows project) and passes them to a pure rule in Core that returns an outcome code, such as `firewall.someOff`. `data/checks.json` maps each code to a colour, words, steps and buttons. Thresholds and dates live there too. So the wording and the severity can both be changed without touching code, and every rule is unit-tested with plain facts.
+
+**Registry reading lives in Core, behind `IRegistryReader`.** The Windows project only provides the reader. Which keys mean what is business logic, and keeping it in Core means it's tested on any computer with a fake registry. PowerShell scripts live in the Windows project, as the brief asks, with their output parsed in Core so the parsing is tested too.
+
+**Choices made on wording and colour:**
+
+- Encryption on is blue ("For your information"), with the recovery key reminder and a button to Microsoft's recovery key page. The brief says the key matters more than whether encryption is on, and an amber result on every encrypted PC would be noise.
+- Windows 11 24H2 Home and Pro ended on 13 October 2026. That shows amber with free steps to move to 25H2, not red, because Windows Update normally offers it automatically.
+- Windows 10 that's had updates in the last 45 days is green with a note about 12 October 2027, since that's the best available sign it's enrolled in Extended Security Updates. Windows doesn't offer a reliable way to read enrolment directly.
+- SMB1 and Remote Desktop are amber, not red. Red is kept for antivirus off, firewall off, permission prompts off and updates not working.
+- Remote control apps found are blue, never called harmful. The brief's "tell us" became "go to Scam help" to keep AM Software's paid help away from results, as agreed. The owner can change this in `checks.json`.
+- Results are sorted with red first, then amber, couldn't check, information and green, so nobody has to scroll to find what needs doing. The headline never contains a number.
+
+**Status colours.** Red `#A12A1E`, amber `#8A4B00`, green `#0B6E4A`, blue `#1F4E8C`, grey `#4A4C66`, each on its own light background. `ThemeContrastTests` checks every one is at least 4.5:1 against white and against its background. Every status also has its own icon shape (triangle for amber, circle for the rest), symbol and label.
+
 ## Open questions
 
-- **Undo against rule 6.** Undoing "turned the firewall on" means turning it off again, which rule 6 forbids. Raised with the owner at the end of phase 1. To decide before phase 3.
+- **Settings read for the wrong person.** The app runs as administrator. If someone signed in as a standard user approves the prompt with a different administrator account, "current user" settings (OneDrive folders, and in phase 4 browser settings) are read from the administrator's profile, not theirs. Most home PCs sign in as an administrator, so this rarely applies. Phase 4 needs a decision on whether to detect it and say so.
+- **Windows 11 support dates** in `checks.json` come from Microsoft's notices as reported in October 2026, because learn.microsoft.com couldn't be reached from the build environment. Recheck them on Microsoft's release health page before release.

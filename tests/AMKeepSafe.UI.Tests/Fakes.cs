@@ -1,3 +1,4 @@
+using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Core.Platform;
 using AMKeepSafe.Services;
@@ -41,6 +42,16 @@ internal sealed class FakeShell : IShellLauncher
     {
         OpenedFolders.Add(path);
         return FoldersWork;
+    }
+
+    public bool SettingsWork { get; set; } = true;
+
+    public List<WindowsSettingsPage> OpenedSettings { get; } = [];
+
+    public bool OpenSettings(WindowsSettingsPage page)
+    {
+        OpenedSettings.Add(page);
+        return SettingsWork;
     }
 }
 

@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:AMKeepSafe.ViewModels"
+        xmlns:views="clr-namespace:AMKeepSafe.Views"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="AM Keep Safe"
@@ -70,17 +71,7 @@
 
         <TabControl Grid.Row="2" Style="{StaticResource MainTabControl}" ItemContainerStyle="{StaticResource MainTabItem}">
             <TabItem Header="Safety check" AutomationProperties.Name="Safety check">
-                <ScrollViewer Style="{StaticResource TabPage}">
-                    <Border Style="{StaticResource Card}" MaxWidth="820" HorizontalAlignment="Left">
-                        <StackPanel>
-                            <TextBlock Text="Safety check" Style="{StaticResource HeadingText}" />
-                            <TextBlock Style="{StaticResource BodyText}" Margin="0,12,0,0"
-                                       Text="Check how your PC is set up: Windows updates, antivirus, firewall, backups and more. Each result says what it means in one sentence, and what you can do about it." />
-                            <TextBlock Style="{StaticResource MutedText}" Margin="0,12,0,0"
-                                       Text="This part of the app is still being built." />
-                        </StackPanel>
-                    </Border>
-                </ScrollViewer>
+                <views:SafetyCheckView DataContext="{Binding SafetyCheck}" />
             </TabItem>
 
             <TabItem Header="Browser check" AutomationProperties.Name="Browser check">

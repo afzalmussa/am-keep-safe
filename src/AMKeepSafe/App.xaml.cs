@@ -1,10 +1,13 @@
 using System.Windows;
 using System.Windows.Threading;
+using AMKeepSafe.Core.Checks;
+using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Core.Configuration;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Services;
 using AMKeepSafe.ViewModels;
 using AMKeepSafe.Views;
+using AMKeepSafe.Windows.Checks;
 using AMKeepSafe.Windows.Platform;
 
 namespace AMKeepSafe;
@@ -55,7 +58,22 @@ public partial class App : Application
         var shell = new WindowsShellLauncher(_log);
         var dialogs = new DialogService();
 
-        var viewModel = new MainViewModel(_log, shell, dialogs, settings, options);
+        var powerShell = new PowerShellRunner(_log);
+        var checks = SafetyCheckSet.Create(new CheckSources(
+            new WindowsRegistryReader(),
+            new WindowsProcessList(),
+            new WindowsUpdateInfo(powerShell),
+            new AntivirusInfo(powerShell),
+            new FirewallInfo(powerShell),
+            new EncryptionInfo(powerShell),
+            new SecureBootTpmInfo(powerShell),
+            new Smb1Info(powerShell),
+            RemoteToolList.LoadEmbedded(),
+            TimeProvider.System));
+        var catalog = CheckCatalog.LoadEmbedded();
+        var safetyCheck = new SafetyCheckViewModel(new SafetyCheckRunner(checks, catalog, _log), catalog, shell, dialogs, _log);
+
+        var viewModel = new MainViewModel(_log, shell, dialogs, settings, options, safetyCheck);
 
         var window = new MainWindow { DataContext = viewModel };
         MainWindow = window;

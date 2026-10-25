@@ -14,14 +14,18 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly AppSettings _settings;
 
-    public MainViewModel(IAppLog log, IShellLauncher shell, IDialogService dialogs, AppSettings settings, AppOptions options)
+    public MainViewModel(IAppLog log, IShellLauncher shell, IDialogService dialogs, AppSettings settings, AppOptions options, SafetyCheckViewModel? safetyCheck = null)
     {
+        SafetyCheck = safetyCheck;
         _log = log;
         _shell = shell;
         _dialogs = dialogs;
         _settings = settings;
         IsDryRun = options.DryRun;
     }
+
+    /// <summary>The Safety check tab.</summary>
+    public SafetyCheckViewModel? SafetyCheck { get; }
 
     public string ProductName => AppInfo.ProductName;
 

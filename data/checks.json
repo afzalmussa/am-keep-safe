@@ -1,0 +1,523 @@
+{
+  // Everything the Safety check says. Edit the wording here without touching code.
+  //
+  // Each check has outcomes. Each outcome has:
+  //   status    good, attention (amber), problem (red), info (blue, not a pass or fail) or unknown
+  //   summary   one or two calm sentences. Words in {curly brackets} are filled in by the app.
+  //   howToFix  simple steps, shown under "How to fix"
+  //   actions   buttons: a Windows settings page (settingsPage) or a secure web page (url)
+  //
+  // The tests check every sentence here against the wording rules: no scare words, no promises
+  // that the PC "is safe" or "protected", no exclamation marks and no jargon. They also check
+  // every outcome the app can produce has wording, and every {placeholder} gets filled in.
+
+  "statusLabels": {
+    "good": "Looks fine",
+    "attention": "Worth a look",
+    "problem": "Needs your attention",
+    "info": "For your information",
+    "unknown": "Couldn't check"
+  },
+
+  "summary": {
+    "allClear": "No problems found in the things we checked.",
+    "someToLookAt": "Some things are worth a look. Each one says what it means and what you can do about it.",
+    "someNotChecked": "A few things couldn't be checked this time. You can try again later.",
+    "whatWeCheckedLink": "See what we checked"
+  },
+
+  "couldNotCheck": {
+    "status": "unknown",
+    "summary": "We couldn't check this just now. You can try again, and the details are saved in the log."
+  },
+
+  "checks": [
+    {
+      "id": "windows-update",
+      "title": "Windows updates",
+      "whatWeCheck": "Whether Windows Update is switched on, when updates last installed, and whether any are waiting.",
+      "parameters": {
+        "amberAfterDays": 45,
+        "redAfterDays": 90
+      },
+      "outcomes": {
+        "working": {
+          "status": "good",
+          "summary": "Windows Update is working. Updates last installed {lastInstalledAgo}, on {lastInstalledDate}."
+        },
+        "workingWithWaiting": {
+          "status": "good",
+          "summary": "Windows Update is working. Updates last installed {lastInstalledAgo}, and some more are waiting. Windows will install them by itself, or you can restart your PC to finish them sooner.",
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "aWhile": {
+          "status": "attention",
+          "summary": "Updates last installed {lastInstalledAgo}, on {lastInstalledDate}. Windows normally installs them every month, so it's worth checking for new ones.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below.",
+            "Click \"Check for updates\" and let anything it finds install.",
+            "Restart your PC if it asks you to."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "notForAWhile": {
+          "status": "problem",
+          "summary": "Updates haven't installed since {lastInstalledDate}, which is {lastInstalledAgo}. Updates fix security weaknesses, so it's worth getting them going again.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below.",
+            "Click \"Check for updates\" and let anything it finds install. This can take a while the first time.",
+            "Restart your PC if it asks you to.",
+            "If updates keep failing, note down any message Windows shows. Someone who looks after computers can use it to work out why."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "paused": {
+          "status": "attention",
+          "summary": "Windows updates are paused until {pausedUntil}. While they're paused, your PC doesn't get security fixes.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below.",
+            "Click \"Resume updates\"."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "turnedOff": {
+          "status": "problem",
+          "summary": "Automatic updates have been switched off by a setting on this PC, so Windows won't install security fixes by itself.",
+          "howToFix": [
+            "If this is a work or school PC, the people who look after it may have done this on purpose. Ask them first.",
+            "In the meantime, click \"Open Windows Update\" below and click \"Check for updates\" to get this month's fixes."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "serviceDisabled": {
+          "status": "problem",
+          "summary": "The part of Windows that installs updates has been switched off, so your PC can't get security fixes.",
+          "howToFix": [
+            "Type \"services\" into the Start menu and open Services.",
+            "Find \"Windows Update\" in the list and double-click it.",
+            "Set \"Startup type\" to \"Manual\", which is Windows' normal setting, and click OK.",
+            "Then open Windows Update and click \"Check for updates\"."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        }
+      }
+    },
+
+    {
+      "id": "windows-version",
+      "title": "Windows version",
+      "whatWeCheck": "Whether this version of Windows still gets security updates from Microsoft.",
+      "parameters": {
+        // An update installed this recently counts as "still getting updates" on Windows 10.
+        "recentUpdateDays": 45,
+        "warnDaysBeforeEnd": 60,
+        // Checked on Microsoft's UK Extended Security Updates page on 25 October 2026.
+        "windows10": {
+          "lastVersionBuild": 19045,
+          "supportEnded": "2025-10-14",
+          "consumerEsuEnds": "2027-10-12"
+        },
+        // Windows 11 versions: the first build number of each, and when each stops getting updates.
+        // 24H2 and 25H2 dates are from Microsoft's notices as reported in October 2026. Recheck on
+        // learn.microsoft.com/windows/release-health before each release.
+        "windows11": [
+          { "build": 22000, "version": "21H2", "homeProEnds": "2023-10-10", "enterpriseEnds": "2024-10-08" },
+          { "build": 22621, "version": "22H2", "homeProEnds": "2024-10-08", "enterpriseEnds": "2025-10-14" },
+          { "build": 22631, "version": "23H2", "homeProEnds": "2025-11-11", "enterpriseEnds": "2026-11-10" },
+          { "build": 26100, "version": "24H2", "homeProEnds": "2026-10-13", "enterpriseEnds": "2027-10-12" },
+          { "build": 26200, "version": "25H2", "homeProEnds": "2027-10-12", "enterpriseEnds": "2028-10-10" }
+        ]
+      },
+      "outcomes": {
+        "win11Supported": {
+          "status": "good",
+          "summary": "This PC runs Windows 11, version {version}, which still gets security updates from Microsoft."
+        },
+        "win11EndingSoon": {
+          "status": "good",
+          "summary": "This PC runs Windows 11, version {version}. It gets security updates until {endDate}. Windows Update will offer the newer version before then, usually by itself.",
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "win11Ended": {
+          "status": "attention",
+          "summary": "This PC runs Windows 11, version {version}, which stopped getting security updates on {endDate}. Moving to the newer version is free and keeps your files and apps.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below.",
+            "Click \"Check for updates\".",
+            "If a newer version of Windows 11 is offered, click \"Download and install\". It can take an hour or so, and your PC will restart."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "win10GettingUpdates": {
+          "status": "good",
+          "summary": "This PC runs Windows 10. Free updates for Windows 10 ended on {windows10SupportEnded}, but updates have installed recently, so it looks like this PC is signed up for Extended Security Updates. These carry on until {esuEnds}. It's worth planning a move to Windows 11, or a newer PC, before then."
+        },
+        "win10NotGettingUpdates": {
+          "status": "attention",
+          "summary": "This PC runs Windows 10, which stopped getting free security updates on {windows10SupportEnded}. You can keep getting them until {esuEnds} by signing up for Extended Security Updates, and signing up can be free.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below.",
+            "Look for Windows 10 Extended Security Updates and click \"Enroll now\", then follow the steps.",
+            "You'll need to sign in with a Microsoft account. It's free if you choose to back up your PC settings to that account.",
+            "If you've already signed up, updates may just not have installed lately. Click \"Check for updates\"."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "win10OldVersion": {
+          "status": "problem",
+          "summary": "This PC runs an older version of Windows 10 that no longer gets any security updates. To get them again, it needs updating to Windows 10 version 22H2 or moving to Windows 11.",
+          "howToFix": [
+            "Click \"Open Windows Update\" below and click \"Check for updates\".",
+            "If it doesn't offer an update, someone who looks after computers can help."
+          ],
+          "actions": [ { "label": "Open Windows Update", "settingsPage": "windowsUpdate" } ]
+        },
+        "win10EsuEnded": {
+          "status": "problem",
+          "summary": "This PC runs Windows 10, and Extended Security Updates ended on {esuEnds}, so it no longer gets security fixes. Moving to Windows 11, or a newer PC, is the way to keep getting them."
+        },
+        "win10Organisation": {
+          "status": "info",
+          "summary": "This PC runs a business edition of Windows 10. Free updates ended on {windows10SupportEnded}, but organisations can pay for Extended Security Updates. If this is a work PC, ask whoever looks after it."
+        },
+        "longTermServicing": {
+          "status": "info",
+          "summary": "This PC runs a special long-term edition of Windows, which has its own update dates. Whoever set it up should know when its updates end."
+        },
+        "olderWindows": {
+          "status": "problem",
+          "summary": "This PC runs a version of Windows that no longer gets security updates.",
+          "howToFix": [
+            "Someone who looks after computers can tell you whether this PC can move to Windows 11, or help you choose a newer one."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "antivirus",
+      "title": "Antivirus",
+      "whatWeCheck": "Which antivirus is switched on, whether Microsoft Defender is checking files as you use them, and how up to date its virus information is.",
+      "parameters": {
+        "amberAfterDays": 3,
+        "redAfterDays": 14
+      },
+      "outcomes": {
+        "defenderOn": {
+          "status": "good",
+          "summary": "Microsoft Defender is switched on and checking files as you use them."
+        },
+        "defenderInfoOld": {
+          "status": "attention",
+          "summary": "Microsoft Defender is on, but its virus information was last updated {updatedAgo}. It normally updates every day, and updating it takes a minute.",
+          "howToFix": [
+            "Click \"Open Windows Security\" below. It opens on the virus protection page.",
+            "Click \"Protection updates\", then \"Check for updates\"."
+          ],
+          "actions": [ { "label": "Open Windows Security", "settingsPage": "virusProtection" } ]
+        },
+        "defenderInfoVeryOld": {
+          "status": "problem",
+          "summary": "Microsoft Defender's virus information hasn't updated since {updatedDate}, so it may not recognise newer viruses. Updating it takes a minute.",
+          "howToFix": [
+            "Click \"Open Windows Security\" below. It opens on the virus protection page.",
+            "Click \"Protection updates\", then \"Check for updates\".",
+            "If it won't update, check that Windows Update is working: it's at the top of this list."
+          ],
+          "actions": [ { "label": "Open Windows Security", "settingsPage": "virusProtection" } ]
+        },
+        "defenderRealTimeOff": {
+          "status": "problem",
+          "summary": "Real-time protection in Microsoft Defender is switched off, so files aren't checked as you open them. Windows usually turns it back on by itself after a while, but you can turn it on now.",
+          "howToFix": [
+            "Click \"Open Windows Security\" below. It opens on the virus protection page.",
+            "Under the virus protection settings, click \"Manage settings\".",
+            "Switch \"Real-time protection\" on."
+          ],
+          "actions": [ { "label": "Open Windows Security", "settingsPage": "virusProtection" } ]
+        },
+        "otherOn": {
+          "status": "good",
+          "summary": "{name} is your antivirus and it's switched on. Microsoft Defender steps back while another antivirus is in charge, which is normal."
+        },
+        "otherOutOfDate": {
+          "status": "attention",
+          "summary": "{name} is your antivirus, but Windows says its virus information is out of date.",
+          "howToFix": [
+            "Open {name} from the Start menu and look for an option to update it.",
+            "If its subscription has run out, you can uninstall it. Microsoft Defender comes with Windows, is free, and switches itself back on."
+          ]
+        },
+        "noneOn": {
+          "status": "problem",
+          "summary": "Windows can't see any antivirus switched on. Microsoft Defender comes with Windows and is free, and turning it on takes a minute.",
+          "howToFix": [
+            "Click \"Open Windows Security\" below. It opens on the virus protection page.",
+            "If there's a \"Turn on\" button, click it.",
+            "If it says another antivirus is in charge but that one has run out, uninstall the old one. Microsoft Defender will switch itself back on."
+          ],
+          "actions": [ { "label": "Open Windows Security", "settingsPage": "virusProtection" } ]
+        }
+      }
+    },
+
+    {
+      "id": "firewall",
+      "title": "Firewall",
+      "whatWeCheck": "Whether the firewall, which blocks unwanted connections from the internet, is switched on for every kind of network.",
+      "parameters": {
+        "networkNames": {
+          "domain": "work networks",
+          "private": "home networks",
+          "public": "public networks, like in cafés"
+        }
+      },
+      "outcomes": {
+        "allOn": {
+          "status": "good",
+          "summary": "The firewall is switched on for every kind of network."
+        },
+        "otherFirewall": {
+          "status": "good",
+          "summary": "{name} is looking after your firewall, so Windows' own firewall stepping back is normal."
+        },
+        "someOff": {
+          "status": "problem",
+          "summary": "The firewall is switched off for {networks}. It's best to have it on everywhere.",
+          "howToFix": [
+            "Click \"Open firewall settings\" below.",
+            "Click \"Turn on\" next to each network that shows as off."
+          ],
+          "actions": [ { "label": "Open firewall settings", "settingsPage": "firewall" } ]
+        },
+        "allOff": {
+          "status": "problem",
+          "summary": "The firewall is switched off for every kind of network. It blocks unwanted connections, so it's best to switch it back on.",
+          "howToFix": [
+            "Click \"Open firewall settings\" below.",
+            "Click \"Turn on\" next to each network, or \"Restore settings\" if you see it."
+          ],
+          "actions": [ { "label": "Open firewall settings", "settingsPage": "firewall" } ]
+        }
+      }
+    },
+
+    {
+      "id": "user-account-control",
+      "title": "Permission prompts",
+      "whatWeCheck": "Whether Windows asks before apps make changes to your PC. This is called User Account Control.",
+      "outcomes": {
+        "on": {
+          "status": "good",
+          "summary": "Windows asks for your permission before apps make changes, which gives you a chance to stop something you didn't expect."
+        },
+        "neverNotify": {
+          "status": "attention",
+          "summary": "Windows has been set never to ask before apps make changes, so a harmful program could change things without you knowing.",
+          "howToFix": [
+            "Click \"Open permission settings\" below.",
+            "Move the slider to the second notch from the top, which is Windows' normal setting.",
+            "Click OK."
+          ],
+          "actions": [ { "label": "Open permission settings", "settingsPage": "userAccountControl" } ]
+        },
+        "off": {
+          "status": "problem",
+          "summary": "Permission prompts are switched off completely, so apps can make changes to your PC without asking.",
+          "howToFix": [
+            "Click \"Open permission settings\" below.",
+            "Move the slider to the second notch from the top, which is Windows' normal setting.",
+            "Click OK, then restart your PC."
+          ],
+          "actions": [ { "label": "Open permission settings", "settingsPage": "userAccountControl" } ]
+        }
+      }
+    },
+
+    {
+      "id": "encryption",
+      "title": "Drive encryption",
+      "whatWeCheck": "Whether the drive Windows is on is encrypted, which stops anyone reading your files if the PC is lost or stolen, and whether you know where the recovery key is.",
+      "outcomes": {
+        "on": {
+          "status": "info",
+          "summary": "Your drive is encrypted, so your files can't be read if the PC is lost or stolen. The important thing is knowing where your recovery key is: Windows sometimes asks for it, for example after a repair, and without it your files can't be opened. It's usually saved in your Microsoft account.",
+          "howToFix": [
+            "Click \"Find my recovery key\" below and sign in with your Microsoft account.",
+            "If a key is listed for this PC, you're all set. You could also write it down and keep it with your important papers.",
+            "If no key is listed, it may have been saved to a file or printed when encryption was turned on. On a work PC, your workplace keeps it."
+          ],
+          "actions": [ { "label": "Find my recovery key", "url": "https://aka.ms/myrecoverykey" } ]
+        },
+        "suspended": {
+          "status": "attention",
+          "summary": "Your drive is encrypted, but its protection is paused. This often happens during updates and switches back on by itself after a restart. If it stays paused after you restart, it can be resumed in encryption settings.",
+          "howToFix": [
+            "Restart your PC, then run the check again.",
+            "If it's still paused, click \"Open encryption settings\" below and choose to resume protection."
+          ],
+          "actions": [ { "label": "Open encryption settings", "settingsPage": "deviceEncryption" } ]
+        },
+        "turningOn": {
+          "status": "info",
+          "summary": "Your drive is being encrypted right now, and you can keep using your PC while it finishes. Make sure you know where the recovery key is saved, usually in your Microsoft account.",
+          "actions": [ { "label": "Find my recovery key", "url": "https://aka.ms/myrecoverykey" } ]
+        },
+        "off": {
+          "status": "info",
+          "summary": "Your drive isn't encrypted. Encryption stops anyone reading your files if the PC is lost or stolen, which matters most for laptops. If you turn it on, make sure you know where the recovery key is saved.",
+          "actions": [ { "label": "Open encryption settings", "settingsPage": "deviceEncryption" } ]
+        },
+        "notAvailable": {
+          "status": "info",
+          "summary": "This PC or edition of Windows doesn't offer drive encryption. That's common on Windows Home and older PCs."
+        }
+      }
+    },
+
+    {
+      "id": "backups",
+      "title": "Backups",
+      "whatWeCheck": "Is your stuff backed up? We look for File History, OneDrive backing up your folders, and System Restore.",
+      "parameters": {
+        "viaOneDrive": "OneDrive is backing up your {folders} folders.",
+        "viaFileHistory": "File History is backing up your files.",
+        "folderNames": {
+          "Desktop": "Desktop",
+          "Documents": "Documents",
+          "Pictures": "Pictures"
+        }
+      },
+      "outcomes": {
+        "allOn": {
+          "status": "good",
+          "summary": "{backupHow} System Restore is on too, so Windows can be wound back if an update or app causes trouble."
+        },
+        "restoreOff": {
+          "status": "attention",
+          "summary": "{backupHow} System Restore is off, though. It lets Windows be wound back if an update or app causes trouble, without touching your files.",
+          "howToFix": [
+            "Click \"Open System Restore settings\" below.",
+            "Select the drive marked (System) and click \"Configure\".",
+            "Choose \"Turn on system protection\" and click OK."
+          ],
+          "actions": [ { "label": "Open System Restore settings", "settingsPage": "systemProtection" } ]
+        },
+        "noFileBackup": {
+          "status": "attention",
+          "summary": "Is your stuff backed up? We couldn't see File History or OneDrive backing up your files. If you back up another way, such as to an external drive, you can ignore this.",
+          "howToFix": [
+            "The simplest option is OneDrive: open it from the Start menu and choose to back up your Desktop, Documents and Pictures folders.",
+            "Or plug in an external drive, click \"Open backup settings\" below and turn on File History."
+          ],
+          "actions": [ { "label": "Open backup settings", "settingsPage": "backup" } ]
+        },
+        "nothingOn": {
+          "status": "attention",
+          "summary": "Is your stuff backed up? We couldn't see File History or OneDrive backing up your files, and System Restore is off. If you back up your files another way, such as to an external drive, it's still worth turning System Restore on.",
+          "howToFix": [
+            "For your files, the simplest option is OneDrive: open it from the Start menu and choose to back up your Desktop, Documents and Pictures folders.",
+            "For System Restore, click \"Open System Restore settings\" below, select the drive marked (System), click \"Configure\" and choose \"Turn on system protection\"."
+          ],
+          "actions": [
+            { "label": "Open backup settings", "settingsPage": "backup" },
+            { "label": "Open System Restore settings", "settingsPage": "systemProtection" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "remote-desktop",
+      "title": "Remote Desktop",
+      "whatWeCheck": "Whether Remote Desktop, which lets other computers connect to and control this one, is switched on.",
+      "outcomes": {
+        "off": {
+          "status": "good",
+          "summary": "Remote Desktop is off, so other computers can't use it to connect to this one."
+        },
+        "on": {
+          "status": "attention",
+          "summary": "Remote Desktop is switched on, so other computers can connect to this one. If you don't use it, or don't know why it's on, it's best to turn it off.",
+          "howToFix": [
+            "Click \"Open Remote Desktop settings\" below.",
+            "Switch \"Remote Desktop\" off and confirm."
+          ],
+          "actions": [ { "label": "Open Remote Desktop settings", "settingsPage": "remoteDesktop" } ]
+        }
+      }
+    },
+
+    {
+      "id": "smb1",
+      "title": "Old file sharing (SMB1)",
+      "whatWeCheck": "Whether SMB1, a very old way of sharing files between computers, is switched on. It has known weaknesses and most homes don't need it.",
+      "outcomes": {
+        "off": {
+          "status": "good",
+          "summary": "SMB1, a very old way of sharing files between computers, is switched off. That's how it should be."
+        },
+        "on": {
+          "status": "attention",
+          "summary": "SMB1, a very old way of sharing files between computers, is switched on. It has known weaknesses, and almost nothing needs it now apart from some very old printers and network drives.",
+          "howToFix": [
+            "Click \"Open Windows features\" below.",
+            "Find \"SMB 1.0/CIFS File Sharing Support\" and untick it.",
+            "Click OK, and restart when asked."
+          ],
+          "actions": [ { "label": "Open Windows features", "settingsPage": "windowsFeatures" } ]
+        }
+      }
+    },
+
+    {
+      "id": "remote-access-tools",
+      "title": "Remote control apps",
+      "whatWeCheck": "Apps that let someone else see and control your computer, such as AnyDesk and TeamViewer. They have honest uses, but scammers often ask people to install them. The full list is in data/remote-tools.json.",
+      "parameters": {
+        "itemInstalled": "{name}: installed",
+        "itemOpen": "{name}: open right now",
+        "itemInstalledAndOpen": "{name}: installed and open right now"
+      },
+      "outcomes": {
+        "noneFound": {
+          "status": "good",
+          "summary": "We didn't find any of the remote control apps we look for."
+        },
+        "found": {
+          "status": "info",
+          "summary": "We found these apps, which let someone else see and control this computer. They have honest uses, such as family or a computer shop helping you. If you didn't install one, or a stranger asked you to, go to Scam help.",
+          "howToFix": [
+            "If a stranger is connected right now, disconnect from the internet first: unplug the cable or switch off Wi-Fi.",
+            "If you don't use an app, you can uninstall it from Installed apps."
+          ],
+          "actions": [ { "label": "Open installed apps", "settingsPage": "installedApps" } ]
+        }
+      }
+    },
+
+    {
+      "id": "secure-boot-tpm",
+      "title": "Secure Boot and security chip",
+      "whatWeCheck": "Secure Boot, which checks Windows hasn't been tampered with as the PC starts, and the TPM, a security chip that keeps encryption keys. Shown for information only.",
+      "outcomes": {
+        "bothOn": {
+          "status": "info",
+          "summary": "Secure Boot is on and this PC has a TPM security chip. Both help stop tampering before Windows starts."
+        },
+        "secureBootOff": {
+          "status": "info",
+          "summary": "This PC has a TPM security chip, but Secure Boot is off. That's often how older PCs come set up. It's changed in the PC's start-up settings, so it's best left to someone confident with those."
+        },
+        "noTpm": {
+          "status": "info",
+          "summary": "Secure Boot is on, but Windows can't see a TPM security chip. Windows 11 needs one, so this may matter if you upgrade."
+        },
+        "neitherOn": {
+          "status": "info",
+          "summary": "Secure Boot is off and Windows can't see a TPM security chip. That's normal for older PCs, though Windows 11 needs both."
+        }
+      }
+    }
+  ]
+}
