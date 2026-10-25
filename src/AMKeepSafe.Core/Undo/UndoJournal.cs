@@ -1,0 +1,174 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using AMKeepSafe.Core.Logging;
+
+namespace AMKeepSafe.Core.Undo;
+
+/// <summary>The kinds of change the app records. Every setting change gets one of these before it's made (trust rule 5).</summary>
+public enum UndoKind
+{
+    /// <summary>A registry value was set, changed or deleted. Data holds the key, the value name and what it was before.</summary>
+    RegistryValueChanged,
+
+    /// <summary>A whole registry key, such as a browser policy, was removed after being saved to <see cref="UndoEntry.BackupFile"/>.</summary>
+    RegistryKeyRemoved,
+
+    /// <summary>A Windows service's start setting was changed. Data holds the service name and its previous start setting.</summary>
+    ServiceStartTypeChanged,
+
+    /// <summary>A Windows setting changed through a system command, such as a firewall profile or an optional Windows feature.</summary>
+    SettingChanged,
+}
+
+/// <summary>A record of one change, kept so it can be undone (or at least explained) later.</summary>
+public sealed record UndoEntry
+{
+    public required Guid Id { get; init; }
+
+    public required DateTimeOffset When { get; init; }
+
+    public required UndoKind Kind { get; init; }
+
+    /// <summary>What was changed, in the words shown on the undo screen. For example "Turned off Remote Desktop".</summary>
+    public required string DisplayName { get; init; }
+
+    /// <summary>Whatever is needed to undo it, for example the registry key and the value it had before.</summary>
+    public IReadOnlyDictionary<string, string> Data { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>A copy of what was removed, saved before the change. Undo restores from this file.</summary>
+    public string? BackupFile { get; init; }
+
+    public bool CanUndoInApp { get; init; }
+
+    public DateTimeOffset? UndoneAt { get; init; }
+
+    [JsonIgnore]
+    public bool IsUndone => UndoneAt is not null;
+}
+
+public interface IUndoJournal
+{
+    IReadOnlyList<UndoEntry> GetAll();
+
+    /// <summary>
+    /// Called before the change is made. Throws if the record can't be saved, so a change never goes
+    /// ahead without a way back.
+    /// </summary>
+    void Add(UndoEntry entry);
+
+    /// <summary>Returns false if there's no entry with that id.</summary>
+    bool MarkUndone(Guid id, DateTimeOffset when);
+}
+
+/// <summary>
+/// Keeps the undo history in a JSON file. Every write goes to a temporary file first and then
+/// replaces the real one, so a power cut can't leave a half-written history.
+/// </summary>
+public sealed class FileUndoJournal : IUndoJournal
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    private readonly object _gate = new();
+    private readonly string _path;
+    private readonly IAppLog _log;
+    private List<UndoEntry>? _entries;
+
+    public FileUndoJournal(string path, IAppLog log)
+    {
+        _path = path;
+        _log = log;
+    }
+
+    public IReadOnlyList<UndoEntry> GetAll()
+    {
+        lock (_gate)
+        {
+            return Load().ToList();
+        }
+    }
+
+    public void Add(UndoEntry entry)
+    {
+        lock (_gate)
+        {
+            Load().Add(entry);
+            Save();
+        }
+    }
+
+    public bool MarkUndone(Guid id, DateTimeOffset when)
+    {
+        lock (_gate)
+        {
+            var entries = Load();
+            var index = entries.FindIndex(e => e.Id == id);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            entries[index] = entries[index] with { UndoneAt = when };
+            Save();
+            return true;
+        }
+    }
+
+    private List<UndoEntry> Load()
+    {
+        if (_entries is not null)
+        {
+            return _entries;
+        }
+
+        if (!File.Exists(_path))
+        {
+            return _entries = [];
+        }
+
+        try
+        {
+            var json = File.ReadAllText(_path);
+            _entries = JsonSerializer.Deserialize<List<UndoEntry>>(json, JsonOptions) ?? [];
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+            // Keep the damaged file for investigation and start a fresh history rather than crash.
+            var backup = $"{_path}.damaged-{DateTime.Now:yyyyMMdd-HHmmss}";
+            _log.Warning($"The undo history file was damaged and couldn't be read. It has been kept as {backup} and a new one started.", ex);
+            TryMove(_path, backup);
+            _entries = [];
+        }
+
+        return _entries;
+    }
+
+    private void Save()
+    {
+        var directory = Path.GetDirectoryName(_path);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var temp = _path + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(_entries, JsonOptions));
+        File.Move(temp, _path, overwrite: true);
+    }
+
+    private void TryMove(string from, string to)
+    {
+        try
+        {
+            File.Move(from, to, overwrite: true);
+        }
+        catch (IOException ex)
+        {
+            _log.Warning($"Couldn't keep a copy of the damaged undo history at {to}.", ex);
+        }
+    }
+}

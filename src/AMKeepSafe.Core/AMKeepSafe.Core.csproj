@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Check rules, licensing, undo, logging and service interfaces.
+       No UI and no Windows-only APIs, so it builds and tests on any OS. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AMKeepSafe.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\appsettings.json" LogicalName="AMKeepSafe.Core.appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AMKeepSafe.Tests" />
+  </ItemGroup>
+
+</Project>

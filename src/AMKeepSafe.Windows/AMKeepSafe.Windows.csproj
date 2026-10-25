@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Real Windows implementations of the service interfaces in AMKeepSafe.Core. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>AMKeepSafe.Windows</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AMKeepSafe.Core\AMKeepSafe.Core.csproj" />
+  </ItemGroup>
+
+</Project>

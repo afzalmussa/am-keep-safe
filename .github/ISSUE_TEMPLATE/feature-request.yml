@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest something that would make AM Keep Safe better.
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share an idea. Everyday words are perfect, there's no need for technical detail.
+
+        **This page is public.** Please don't include personal details.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like AM Keep Safe to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: How would it help you?
+      description: For example, "I'd like it to check my printer is set up safely" or "I didn't understand what one of the results meant".
+
+  - type: input
+    id: where
+    attributes:
+      label: Is it about a particular part of the app? (optional)
+      description: For example, "Safety check", "Browser check" or "Scam help".

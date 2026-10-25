@@ -1,0 +1,81 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows build, all tests and app download
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore AMKeepSafe.sln
+
+      - name: Build
+        run: dotnet build AMKeepSafe.sln -c Release --no-restore
+
+      - name: Test
+        # The GitHubActions logger shows each failed test as an annotation on the pull request.
+        # SCREENSHOT_DIR makes the UI tests save pictures of each window for review.
+        env:
+          SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
+        run: dotnet test AMKeepSafe.sln -c Release --no-build --logger trx --logger GitHubActions --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore
+
+      # Pictures of every window at normal and small-laptop sizes. Download from the run's Summary page.
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: screenshots
+          path: screenshots
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Publish single-file app
+        run: dotnet publish src/AMKeepSafe -c Release -o publish
+
+      # Download this from the run's Summary page to test a build without installing anything.
+      - name: Upload AMKeepSafe.exe
+        uses: actions/upload-artifact@v6
+        with:
+          name: AMKeepSafe-exe
+          path: publish/AMKeepSafe.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  core-on-linux:
+    # Proves AMKeepSafe.Core stays free of Windows-only code.
+    name: Core tests on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Test Core
+        run: dotnet test tests/AMKeepSafe.Tests -c Release --logger GitHubActions

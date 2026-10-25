@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AMKeepSafe</AssemblyName>
+    <RootNamespace>AMKeepSafe</RootNamespace>
+    <ApplicationIcon>..\..\assets\am-icon-white-edge.ico</ApplicationIcon>
+    <!-- requireAdministrator, Windows 10/11 support and per-monitor DPI awareness. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!-- "dotnet publish" produces one self-contained AMKeepSafe.exe for 64-bit Windows. -->
+  <PropertyGroup Condition="'$(_IsPublishing)' == 'true'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\assets\am-icon-on-dark.png" Link="Assets\am-icon-on-dark.png" />
+    <Resource Include="..\..\assets\am-icon-white-edge.ico" Link="Assets\am-icon-white-edge.ico" />
+    <Resource Include="..\..\assets\fonts\JetBrainsMono-Bold.ttf" Link="Fonts\JetBrainsMono-Bold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AMKeepSafe.Core\AMKeepSafe.Core.csproj" />
+    <ProjectReference Include="..\AMKeepSafe.Windows\AMKeepSafe.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AMKeepSafe.UI.Tests" />
+  </ItemGroup>
+
+</Project>
