@@ -15,9 +15,9 @@ namespace AMKeepSafe.UI.Tests;
 /// </summary>
 public class WindowSmokeTests
 {
+    // Built the way the app builds it, so every binding has something to bind to.
     private static MainViewModel CreateViewModel(bool dryRun = false) =>
-        new(new FakeLog(), new FakeShell(), new FakeDialogs(), AppSettings.LoadEmbedded(),
-            dryRun ? AppOptions.Parse(["--dry-run"]) : AppOptions.Default);
+        SampleChecks.MainWindowModel(SampleChecks.ViewModel(SampleChecks.Mixed()), dryRun);
 
     private static MainWindow CreateMainWindow(bool dryRun = false)
     {

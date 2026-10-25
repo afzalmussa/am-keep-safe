@@ -100,12 +100,11 @@ public class AntivirusCheckTests
 public class SecurityCenterStateTests
 {
     [Theory]
-    [InlineData(0x061100, true, true)]   // Defender on, up to date
+    [InlineData(0x061100, true, true)]   // Defender on, up to date (Windows reports it as 397568)
     [InlineData(0x060100, false, true)]  // Defender off
     [InlineData(0x061110, true, false)]  // on, out of date
     [InlineData(0x041000, true, true)]   // a third-party product on
     [InlineData(0x040000, false, true)]
-    [InlineData(397568, true, true)]     // the same as 0x061100, as Windows reports it
     public void Decodes_on_and_up_to_date(int state, bool on, bool upToDate)
     {
         Assert.Equal(on, SecurityCenterState.IsOn(state));
