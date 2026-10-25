@@ -90,7 +90,8 @@ public class ReadOnlyWindowsTests
         var registry = new WindowsRegistryReader();
         var checks = SafetyCheckSet.Create(new CheckSources(
             registry, new WindowsProcessList(), new WindowsUpdateInfo(powerShell), new AntivirusInfo(powerShell), new FirewallInfo(powerShell),
-            new EncryptionInfo(powerShell), new SecureBootTpmInfo(powerShell), new Smb1Info(powerShell), RemoteToolList.LoadEmbedded(), TimeProvider.System));
+            new EncryptionInfo(powerShell), new SecureBootTpmInfo(powerShell), new Smb1Info(powerShell), RemoteToolList.LoadEmbedded(), TimeProvider.System,
+            BrowserReadOnlyTests.Runner(_log)));
         var catalog = CheckCatalog.LoadEmbedded();
 
         var results = await new SafetyCheckRunner(checks, catalog, _log).RunAsync();

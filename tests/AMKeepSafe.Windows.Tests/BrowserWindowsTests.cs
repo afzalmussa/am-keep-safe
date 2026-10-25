@@ -37,22 +37,25 @@ public class BrowserReadOnlyTests
         Assert.Equal("firefox", WindowsBrowserProcesses.ProcessName(Browser.Firefox));
     }
 
-    [Fact]
-    public async Task The_whole_browser_check_runs_on_a_real_PC()
+    /// <summary>The Browser check as the app builds it, for this account on this PC.</summary>
+    internal static BrowserCheckRunner Runner(ListLog log)
     {
-        var registry = new WindowsRegistryReader();
         var locations = BrowserLocations.ForCurrentUser();
-        var runner = new BrowserCheckRunner(
+        return new BrowserCheckRunner(
             new ChromiumReader(locations),
             new FirefoxReader(locations),
-            new BrowserPolicyReader(registry, locations),
-            new PcContextInfo(new PowerShellRunner(_log)),
+            new BrowserPolicyReader(new WindowsRegistryReader(), locations),
+            new PcContextInfo(new PowerShellRunner(log)),
             SearchEngineList.LoadEmbedded(),
             KnownBadExtensionList.LoadEmbedded(),
             BrowserText.LoadEmbedded(),
-            _log);
+            log);
+    }
 
-        var report = await runner.RunAsync();
+    [Fact]
+    public async Task The_whole_browser_check_runs_on_a_real_PC()
+    {
+        var report = await Runner(_log).RunAsync();
 
         // GitHub's Windows runners have Edge and Chrome installed, but they may never have been opened.
         Assert.All(report.AllResults, r => Assert.False(string.IsNullOrWhiteSpace(r.Summary)));

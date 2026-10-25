@@ -161,7 +161,7 @@ public sealed class BrowserPolicyRemovalTests : IDisposable
         var restore = _changer.Applied[^1];
         Assert.Equal(SettingChange.Present, restore.To);
         Assert.Equal(entry.BackupFile, restore.BackupFile);
-        Assert.Equal(1, _changer.Backups.Count);
+        Assert.Single(_changer.Backups);
     }
 
     [Fact]

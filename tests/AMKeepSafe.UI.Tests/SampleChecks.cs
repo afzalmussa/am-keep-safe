@@ -33,6 +33,7 @@ internal static class SampleChecks
         new Stub(Smb1Check.CheckId, new CheckOutcome(CheckCatalog.CouldNotCheckCode)),
         new Stub(RemoteToolsCheck.CheckId, new CheckOutcome(RemoteToolsCheck.Found, Items: ["AnyDesk: installed", "TeamViewer: open right now"])),
         new Stub(SecureBootTpmCheck.CheckId, new CheckOutcome(SecureBootTpmCheck.BothOn)),
+        new Stub(AMKeepSafe.Core.Browsers.BrowserSummaryCheck.CheckId, new CheckOutcome(AMKeepSafe.Core.Browsers.BrowserSummaryCheck.SomethingToLook)),
     ];
 
     public static IReadOnlyList<ISafetyCheck> Healthy() =>
@@ -46,5 +47,5 @@ internal static class SampleChecks
 
     public static MainViewModel MainWindowModel(SafetyCheckViewModel safetyCheck, bool dryRun = false, BrowserCheckViewModel? browserCheck = null) =>
         new(new FakeLog(), new FakeShell(), new FakeDialogs(), AppSettings.LoadEmbedded(),
-            dryRun ? AppOptions.Parse(["--dry-run"]) : AppOptions.Default, safetyCheck, browserCheck: browserCheck);
+            dryRun ? AppOptions.Parse(["--dry-run"]) : AppOptions.Default, safetyCheck, browserCheck: browserCheck ?? BrowserSamples.NoBrowsers());
 }

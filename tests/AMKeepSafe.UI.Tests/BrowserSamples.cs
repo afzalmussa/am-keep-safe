@@ -117,6 +117,24 @@ internal sealed class BrowserSamples : IDisposable
     public BrowserCheckViewModel ViewModel(bool withFixes = true) =>
         new(Runner, Shell, Dialogs, Log, withFixes ? Coordinator : null, Processes, TabsVisited.Add);
 
+    /// <summary>A Browser check tab for a PC where no browsers have been used, for tests about other things.</summary>
+    public static BrowserCheckViewModel NoBrowsers()
+    {
+        var nowhere = Path.Combine(Path.GetTempPath(), "amkeepsafe-ui-no-browsers-" + Guid.NewGuid().ToString("N"));
+        var locations = new BrowserLocations(nowhere, nowhere, []);
+        var log = new FakeLog();
+        var runner = new BrowserCheckRunner(
+            new ChromiumReader(locations),
+            new FirefoxReader(locations),
+            new BrowserPolicyReader(new MemoryRegistry(), locations),
+            new FixedPcContext(new PcContext(false, @"PC\Pat", @"PC\Pat")),
+            SearchEngineList.LoadEmbedded(),
+            KnownBadExtensionList.LoadEmbedded(),
+            BrowserText.LoadEmbedded(),
+            log);
+        return new BrowserCheckViewModel(runner, new FakeShell(), new FakeDialogs(), log);
+    }
+
     public void Dispose()
     {
         try
