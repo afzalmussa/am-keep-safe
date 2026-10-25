@@ -79,7 +79,19 @@ Every safety feature is free and always will be.
 
 ## Undoing changes
 
-<!-- To be written once fixes and the undo screen exist. -->
+Some results have a **Fix this** button, and Microsoft Defender results have **Run a quick scan with Microsoft Defender**. Every fix is free.
+
+Before anything changes, AM Keep Safe shows you exactly what it will do, including the precise setting under "Exactly what changes". Nothing happens until you click **Make the change**. Before it changes a setting, it writes down what the setting was, so the change can be reversed.
+
+To undo a change, click **Undo changes** at the bottom of the window. You'll see everything AM Keep Safe has changed, newest first:
+
+- Changes like turning off Remote Desktop or the old SMB1 file sharing have an **Undo** button. Undo shows you a preview too, and puts the setting back exactly as it was.
+- Changes that switched a protection on, such as the firewall or Microsoft Defender's real-time protection, are never switched off again by AM Keep Safe. If you really need to change one back, **Open Windows Settings** takes you to the right page to do it yourself.
+- Running a scan or updating virus information doesn't change any settings, so there's nothing to undo.
+
+To see what a fix would do without changing anything, start the app with `--dry-run`. A yellow banner shows that test mode is on, and everything it would have done is written in the log.
+
+<!-- Screenshot: the preview window for turning the firewall on. -->
 
 ## System requirements
 

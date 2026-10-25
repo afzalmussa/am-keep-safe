@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Configuration;
+using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.ViewModels;
 using AMKeepSafe.Views;
 
@@ -111,6 +112,7 @@ public class WindowSmokeTests
             Assert.Contains("amsoftware.uk", buttons);
             Assert.Contains("Get help", buttons);
             Assert.Contains("View log", buttons);
+            Assert.Contains("Undo changes", buttons);
             Assert.Contains("Check for updates", buttons);
             Assert.Contains("Report a problem", buttons);
             window.Close();
@@ -246,6 +248,72 @@ public class WindowSmokeTests
         var buttons = FindVisual<Button>(view).ToList();
         Assert.True(buttons.Count > 5);
         Assert.All(buttons, b => Assert.False(string.IsNullOrWhiteSpace(b.Content as string), "A result button has no text"));
+    });
+
+    private static FixPreview SamplePreview(bool dryRun)
+    {
+        var catalog = AMKeepSafe.Core.Fixes.FixCatalog.LoadEmbedded();
+        var change = new SettingChange
+        {
+            Key = "smb1Off", Kind = ChangeKind.WindowsFeature, Target = "SMB1Protocol", From = "Enabled", To = "Disabled",
+            NeedsRestart = true, Undo = UndoSupport.InApp, Description = "Switch off SMB1, the old way of sharing files",
+        };
+        return FixPreview.ForFix(catalog.Common, catalog["smb1-off"], [change], dryRun);
+    }
+
+    [Theory]
+    [InlineData(false, "preview")]
+    [InlineData(true, "preview-test-mode")]
+    public void Preview_window_shows_exactly_what_will_change_with_Cancel_as_the_default(bool dryRun, string name)
+    {
+        WpfHost.Run(() =>
+        {
+            var window = new PreviewWindow(SamplePreview(dryRun));
+            LayOut((FrameworkElement)window.Content);
+
+            var buttons = FindAll<Button>(window).ToList();
+            var cancel = buttons.Single(b => (b.Content as string) == "Cancel");
+            Assert.True(cancel.IsDefault);
+            Assert.True(cancel.IsCancel);
+            Assert.Contains(buttons, b => (b.Content as string) == (dryRun ? "Show what would happen" : "Make the change"));
+            Assert.True(Screenshots.HasContent(Screenshots.Render(window, name, 640)));
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public Task Undo_window_renders_with_both_kinds_of_entry() => WpfHost.RunAsync(async () =>
+    {
+        var flow = new FixFlow();
+        var safetyCheck = flow.SafetyCheck();
+        await safetyCheck.CheckCommand.ExecuteAsync(null);
+        foreach (var result in safetyCheck.Results.Where(r => r.Status.NeedsAction()).ToList())
+        {
+            await result.Fixes[0].RunCommand.ExecuteAsync(null);
+        }
+
+        flow.Undo.Refresh();
+        Assert.Equal(2, flow.Undo.Entries.Count);
+        var window = new UndoWindow { DataContext = flow.Undo };
+
+        Assert.True(Screenshots.HasContent(Screenshots.Render(window, "undo-changes", 720, 560)));
+        window.Close();
+    });
+
+    [Fact]
+    public Task Result_with_a_fix_renders_its_Fix_this_button() => WpfHost.RunAsync(async () =>
+    {
+        var flow = new FixFlow();
+        var safetyCheck = flow.SafetyCheck();
+        await safetyCheck.CheckCommand.ExecuteAsync(null);
+        var view = new SafetyCheckView { DataContext = safetyCheck };
+        view.Measure(new Size(1040, 4000));
+        view.Arrange(new Rect(0, 0, 1040, 4000));
+        view.UpdateLayout();
+
+        var labels = FindVisual<Button>(view).Select(b => b.Content as string).ToList();
+        Assert.Contains("Fix this", labels);
+        Assert.Contains("Run a quick scan with Microsoft Defender", labels);
     });
 
     [Fact]

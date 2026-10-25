@@ -157,6 +157,7 @@ public partial class SafetyCheckViewModelTests
     [InlineData(typeof(CheckResultViewModel))]
     [InlineData(typeof(ResultActionViewModel))]
     [InlineData(typeof(StepViewModel))]
+    [InlineData(typeof(FixButtonViewModel))]
     public void Result_view_models_have_nothing_to_do_with_Pro(Type type)
     {
         var names = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Select(m => m.Name);

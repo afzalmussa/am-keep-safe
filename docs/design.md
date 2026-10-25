@@ -64,6 +64,28 @@ Rules 2, 4, 6, 7 and 8 get their enforcement as the features they apply to are b
 
 **Status colours.** Red `#A12A1E`, amber `#8A4B00`, green `#0B6E4A`, blue `#1F4E8C`, grey `#4A4C66`, each on its own light background. `ThemeContrastTests` checks every one is at least 4.5:1 against white and against its background. Every status also has its own icon shape (triangle for amber, circle for the rest), symbol and label.
 
+## Phase 3: fixes, preview and undo
+
+**One route for every change.** A fix plans a list of exact setting changes (`SettingChange`: this setting, from this value, to that value). The person sees them in a preview. `FixRunner` then makes each one, and is the only code that asks the Windows project to change anything. For each change it:
+
+1. refuses anything that would weaken protection (`ProtectionGuard`, trust rule 6),
+2. records the old value in the undo journal, and stops if it can't (trust rule 5),
+3. makes the change,
+4. reads the setting back to be sure it took. Tamper Protection, for example, can quietly ignore a Defender change. A change that didn't take is marked "not made" and left off the undo list,
+5. logs every step (trust rule 9).
+
+**Trust rule 4 is enforced by the types.** `FixRunner.ApplyAsync` and `UndoService.UndoAsync` only accept a `FixPreview` the person has confirmed, and they apply exactly the changes listed in it. An unconfirmed preview throws before anything is touched. In the preview, Cancel is the default button.
+
+**Trust rule 6 is enforced by the guard, not the screens.** `ProtectionGuard` blocks firewall off, Defender real-time off, System Restore off, disabling the update and security services, and the registry values that switch off UAC, Defender, automatic updates or the firewall. Undo goes through the same guard. A test runs every fix from a worst-case PC and checks that nothing planned would weaken protection, that every change marked "undo in Windows Settings" is one the guard would refuse to reverse, and that every change promised an in-app undo is one it allows.
+
+**Fixes in this phase:** firewall on, permission prompts back on, Defender real-time protection on, update Defender's virus information, Defender quick scan, Windows Update service back to Manual, Remote Desktop off, SMB1 off, System Restore on. Fixes plan only what's needed: "Fix this" on something already fixed says there's nothing to change.
+
+**Left as "How to fix" steps for now:** resuming paused updates and removing the "updates turned off" policy (no in-app undo would be allowed under rule 6, and a policy may be deliberate on a work PC), resuming paused encryption, and the Windows 11 version upgrade. Uninstalling remote control apps comes with Scam help in phase 5.
+
+**After a fix,** that one check runs again and its result is replaced in the same place, so nothing jumps around under the mouse.
+
+**Wording** for fixes, the preview, results and the undo list is in `data/fixes.json`, checked by the same wording tests as `checks.json`.
+
 ## Open questions
 
 - **Settings read for the wrong person.** The app runs as administrator. If someone signed in as a standard user approves the prompt with a different administrator account, "current user" settings (OneDrive folders, and in phase 4 browser settings) are read from the administrator's profile, not theirs. Most home PCs sign in as an administrator, so this rarely applies. Phase 4 needs a decision on whether to detect it and say so.

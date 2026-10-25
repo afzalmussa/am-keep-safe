@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using AMKeepSafe.Core.Checks;
+using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Core.Platform;
 using AMKeepSafe.Services;
@@ -15,8 +16,11 @@ public sealed partial class SafetyCheckViewModel(
     CheckCatalog catalog,
     IShellLauncher shell,
     IDialogService dialogs,
-    IAppLog log) : ObservableObject
+    IAppLog log,
+    FixCoordinator? fixes = null) : ObservableObject
 {
+    private IReadOnlyList<CheckResult> _latest = [];
+
     public ObservableCollection<CheckResultViewModel> Results { get; } = [];
 
     [ObservableProperty]
@@ -58,20 +62,62 @@ public sealed partial class SafetyCheckViewModel(
                 ProgressText = $"Checking your PC. {p.Done} of {p.Total} checks done.";
             });
 
-            var results = await runner.RunAsync(progress).ConfigureAwait(true);
+            _latest = await runner.RunAsync(progress).ConfigureAwait(true);
 
             Results.Clear();
-            foreach (var result in SafetyCheckSummary.InDisplayOrder(results))
+            foreach (var result in SafetyCheckSummary.InDisplayOrder(_latest))
             {
-                Results.Add(new CheckResultViewModel(result, catalog.StatusLabels[result.Status], shell, dialogs, log));
+                Results.Add(Wrap(result));
             }
 
-            Headline = SafetyCheckSummary.Headline(results, catalog.Summary);
+            Headline = SafetyCheckSummary.Headline(_latest, catalog.Summary);
             HasResults = true;
         }
         finally
         {
             IsChecking = false;
+        }
+    }
+
+    private CheckResultViewModel Wrap(CheckResult result) => new(
+        result,
+        catalog.StatusLabels[result.Status],
+        shell,
+        dialogs,
+        log,
+        fixes?.FixesFor(result.CheckId, result.OutcomeCode),
+        fixes is null ? null : RunFixAsync,
+        fixes?.Catalog.Common.WorkingText ?? "");
+
+    /// <summary>Runs a fix, then checks that one thing again so the result shows what's true now.</summary>
+    private async Task RunFixAsync(CheckResultViewModel item, FixDefinition fix)
+    {
+        item.IsBusy = true;
+        try
+        {
+            if (!await fixes!.RunAsync(fix).ConfigureAwait(true))
+            {
+                return;
+            }
+
+            if (await runner.RunCheckAsync(item.CheckId).ConfigureAwait(true) is not { } fresh)
+            {
+                return;
+            }
+
+            _latest = _latest.Select(r => r.CheckId == fresh.CheckId ? fresh : r).ToList();
+            var index = Results.IndexOf(item);
+            if (index >= 0)
+            {
+                // Stays where it is, so nothing jumps around under the person's mouse.
+                Results[index] = Wrap(fresh);
+            }
+
+            Headline = SafetyCheckSummary.Headline(_latest, catalog.Summary);
+        }
+        finally
+        {
+            item.IsBusy = false;
         }
     }
 

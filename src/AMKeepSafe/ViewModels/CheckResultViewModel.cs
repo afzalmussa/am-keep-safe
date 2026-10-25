@@ -1,4 +1,5 @@
 using AMKeepSafe.Core.Checks;
+using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.Core.Logging;
 using AMKeepSafe.Core.Platform;
 using AMKeepSafe.Services;
@@ -13,12 +14,22 @@ namespace AMKeepSafe.ViewModels;
 /// </summary>
 public sealed partial class CheckResultViewModel : ObservableObject
 {
-    public CheckResultViewModel(CheckResult result, string statusLabel, IShellLauncher shell, IDialogService dialogs, IAppLog log)
+    public CheckResultViewModel(
+        CheckResult result,
+        string statusLabel,
+        IShellLauncher shell,
+        IDialogService dialogs,
+        IAppLog log,
+        IReadOnlyList<FixDefinition>? fixes = null,
+        Func<CheckResultViewModel, FixDefinition, Task>? runFix = null,
+        string workingText = "")
     {
         Result = result;
         StatusLabel = statusLabel;
+        WorkingText = workingText;
         Steps = result.HowToFix.Select((text, i) => new StepViewModel(i + 1, text)).ToList();
         Actions = result.Actions.Select(a => new ResultActionViewModel(a, result.Title, shell, dialogs, log)).ToList();
+        Fixes = runFix is null ? [] : (fixes ?? []).Select(f => new FixButtonViewModel(f, () => runFix(this, f), () => !IsBusy)).ToList();
     }
 
     public CheckResult Result { get; }
@@ -43,6 +54,25 @@ public sealed partial class CheckResultViewModel : ObservableObject
 
     public IReadOnlyList<ResultActionViewModel> Actions { get; }
 
+    /// <summary>Free fixes for this result, such as "Fix this" or "Run a quick scan". Never a paid upgrade (trust rule 2).</summary>
+    public IReadOnlyList<FixButtonViewModel> Fixes { get; }
+
+    public bool HasFixes => Fixes.Count > 0;
+
+    /// <summary>Shown while a fix or scan is running.</summary>
+    public string WorkingText { get; }
+
+    [ObservableProperty]
+    private bool _isBusy;
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        foreach (var fix in Fixes)
+        {
+            fix.RunCommand.NotifyCanExecuteChanged();
+        }
+    }
+
     /// <summary>Everything a screen reader needs in one go.</summary>
     public string AccessibleName => $"{Title}. {StatusLabel}. {Summary}";
 
@@ -55,6 +85,19 @@ public sealed partial class CheckResultViewModel : ObservableObject
 
     [RelayCommand]
     private void ToggleSteps() => StepsOpen = !StepsOpen;
+}
+
+/// <summary>A button that starts a fix. The fix itself always shows a preview first.</summary>
+public sealed partial class FixButtonViewModel(FixDefinition definition, Func<Task> run, Func<bool> canRun)
+{
+    public string Label => definition.ButtonLabel;
+
+    public FixDefinition Definition => definition;
+
+    [RelayCommand(CanExecute = nameof(CanRun))]
+    private Task RunAsync() => run();
+
+    private bool CanRun() => canRun();
 }
 
 public sealed record StepViewModel(int Number, string Text)

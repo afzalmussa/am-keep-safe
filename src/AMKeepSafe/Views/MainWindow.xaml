@@ -129,6 +129,7 @@
                             Margin="16,0,0,0" />
                 </StackPanel>
                 <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <Button Content="Undo changes" Style="{StaticResource LinkButton}" Command="{Binding OpenUndoCommand}" Margin="0,0,14,0" />
                     <Button Content="View log" Style="{StaticResource LinkButton}" Command="{Binding ViewLogCommand}" Margin="0,0,14,0" />
                     <Button Content="Report a problem" Style="{StaticResource LinkButton}" Command="{Binding ReportProblemCommand}" Margin="0,0,14,0" />
                     <Button Content="Check for updates" Style="{StaticResource LinkButton}" Command="{Binding CheckForUpdatesCommand}" Margin="0,0,14,0" />

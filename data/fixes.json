@@ -1,0 +1,168 @@
+{
+  // Everything the fixes, the preview and undo say. Edit the wording here without touching code.
+  //
+  // Each fix lists the check outcomes it's offered for (forOutcomes, matching data/checks.json),
+  // the button label, the preview heading (title), wording for each change it can make, and what
+  // to say when it's done or didn't work. Fixes are always free (trust rules 2 and 10).
+  //
+  // A change's undoText is only needed when the change can be undone inside the app. Changes that
+  // switch a protection on are never switched off by the app (trust rule 6).
+
+  "common": {
+    "previewIntro": "Here's exactly what will change. Nothing happens until you click \"Make the change\".",
+    "dryRunIntro": "Test mode is on, so nothing will actually change. AM Keep Safe will write down in the log what it would have done.",
+    "confirmButton": "Make the change",
+    "dryRunConfirmButton": "Show what would happen",
+    "cancelButton": "Cancel",
+    "detailsLabel": "Exactly what changes",
+    "undoInApp": "You can undo this later from \"Undo changes\" at the bottom of the window.",
+    "undoViaSettings": "This switches a protection on, so AM Keep Safe will never switch it off again for you. If you ever need to, you can change it yourself in Windows Settings.",
+    "undoNotNeeded": "This doesn't change any settings, so there's nothing to undo.",
+    "restartNeeded": "Windows needs a restart to finish this. You can restart whenever it suits you.",
+    "nothingToDo": "This already looks fine now, so there's nothing to change.",
+    "dryRunDone": "Test mode is on, so nothing was changed. What would have happened is written in the log.",
+    "undoTitle": "Undo a change",
+    "undoIntro": "This puts the setting back to how it was before AM Keep Safe changed it. Nothing happens until you click \"Undo the change\".",
+    "undoConfirmButton": "Undo the change",
+    "undoDone": "Done. The setting is back to how it was.",
+    "undoFailed": "Windows didn't allow the setting to be changed back. Nothing else was affected, and the details are in the log.",
+    "changedSinceNote": "This setting has been changed since AM Keep Safe changed it. Undoing will still put it back to how it was before.",
+
+    "doneTitle": "Done",
+    "partlyDoneTitle": "Partly done",
+    "partlyDoneText": "Some of this was done, but Windows didn't allow all of it. The details are in the log.",
+    "failedTitle": "That didn't go through",
+    "dryRunTitle": "Test mode",
+    "nothingToDoTitle": "Nothing to change",
+    "workingText": "Working on it. You can keep using your PC.",
+
+    "undoWindowTitle": "Undo changes",
+    "undoWindowIntro": "Everything AM Keep Safe has changed on this PC, newest first.",
+    "undoEmpty": "AM Keep Safe hasn't changed anything on this PC yet.",
+    "undoneOn": "Undone on {date}",
+    "undoButton": "Undo",
+    "viaSettingsNote": "This switched a protection on, so AM Keep Safe won't switch it off. You can change it yourself in Windows Settings.",
+    "openSettingsButton": "Open Windows Settings",
+    "closeButton": "Close"
+  },
+
+  "fixes": [
+    {
+      "id": "firewall-on",
+      "checkId": "firewall",
+      "forOutcomes": [ "someOff", "allOff" ],
+      "buttonLabel": "Fix this",
+      "title": "Turn the firewall back on",
+      "changes": {
+        "domain": { "text": "Turn the firewall on for work networks" },
+        "private": { "text": "Turn the firewall on for home networks" },
+        "public": { "text": "Turn the firewall on for public networks, like in cafés" }
+      },
+      "doneText": "The firewall is on again.",
+      "failedText": "Windows didn't allow the firewall to be turned on. If another security app looks after your firewall, open that app instead. The details are in the log."
+    },
+    {
+      "id": "uac-on",
+      "checkId": "user-account-control",
+      "forOutcomes": [ "off", "neverNotify" ],
+      "buttonLabel": "Fix this",
+      "title": "Switch permission prompts back on",
+      "changes": {
+        "enableLua": { "text": "Switch permission prompts back on" },
+        "consentPrompt": { "text": "Set Windows to ask before apps make changes, which is its normal setting" }
+      },
+      "doneText": "Permission prompts are back on.",
+      "failedText": "Windows didn't allow the change. You can do it yourself with \"Open permission settings\". The details are in the log."
+    },
+    {
+      "id": "defender-real-time-on",
+      "checkId": "antivirus",
+      "forOutcomes": [ "defenderRealTimeOff" ],
+      "buttonLabel": "Fix this",
+      "title": "Turn real-time protection back on",
+      "changes": {
+        "realTimeOn": { "text": "Turn on Microsoft Defender real-time protection, so files are checked as you open them" }
+      },
+      "doneText": "Real-time protection is on again.",
+      "failedText": "Windows didn't allow the change. This usually means Tamper Protection is on, which stops apps changing Microsoft Defender's settings. Click \"Open Windows Security\" and turn real-time protection on there."
+    },
+    {
+      "id": "defender-update",
+      "checkId": "antivirus",
+      "forOutcomes": [ "defenderInfoOld", "defenderInfoVeryOld" ],
+      "buttonLabel": "Update virus information",
+      "title": "Update Microsoft Defender's virus information",
+      "changes": {
+        "update": { "text": "Ask Microsoft Defender to download its latest virus information. This needs the internet and takes a minute or two." }
+      },
+      "doneText": "Microsoft Defender's virus information has been updated.",
+      "failedText": "The update didn't finish. Check you're connected to the internet and try again, or click \"Open Windows Security\" and update from there."
+    },
+    {
+      "id": "defender-quick-scan",
+      "checkId": "antivirus",
+      "forOutcomes": [ "defenderOn", "defenderInfoOld", "defenderInfoVeryOld", "defenderRealTimeOff" ],
+      "buttonLabel": "Run a quick scan with Microsoft Defender",
+      "title": "Run a quick scan",
+      "changes": {
+        "scan": { "text": "Ask Microsoft Defender to run a quick scan of the places viruses usually hide. It usually takes a few minutes, and you can keep using your PC." }
+      },
+      "doneText": "The quick scan has finished. If Microsoft Defender found anything, it deals with it and shows its own message.",
+      "failedText": "The scan didn't run. You can start one from Windows Security instead."
+    },
+    {
+      "id": "windows-update-service",
+      "checkId": "windows-update",
+      "forOutcomes": [ "serviceDisabled" ],
+      "buttonLabel": "Fix this",
+      "title": "Switch Windows Update back on",
+      "changes": {
+        "serviceManual": { "text": "Set the Windows Update service back to Windows' normal setting, so updates can install" }
+      },
+      "doneText": "Windows Update can run again. It may take a little while to catch up on updates.",
+      "failedText": "Windows didn't allow the change. The steps under \"How to fix\" show how to do it yourself. The details are in the log."
+    },
+    {
+      "id": "remote-desktop-off",
+      "checkId": "remote-desktop",
+      "forOutcomes": [ "on" ],
+      "buttonLabel": "Fix this",
+      "title": "Turn off Remote Desktop",
+      "changes": {
+        "remoteDesktopOff": {
+          "text": "Turn off Remote Desktop, so other computers can't use it to connect to this one",
+          "undoText": "Turn Remote Desktop back on"
+        }
+      },
+      "doneText": "Remote Desktop is off.",
+      "failedText": "Windows didn't allow Remote Desktop to be turned off. You can do it yourself with \"Open Remote Desktop settings\". The details are in the log."
+    },
+    {
+      "id": "smb1-off",
+      "checkId": "smb1",
+      "forOutcomes": [ "on" ],
+      "buttonLabel": "Fix this",
+      "title": "Switch off SMB1",
+      "changes": {
+        "smb1Off": {
+          "text": "Switch off SMB1, the old way of sharing files",
+          "undoText": "Switch SMB1 back on"
+        }
+      },
+      "doneText": "SMB1 is switched off. The change finishes when you next restart your PC.",
+      "failedText": "Windows didn't allow SMB1 to be switched off. The steps under \"How to fix\" show how to do it yourself. The details are in the log."
+    },
+    {
+      "id": "system-restore-on",
+      "checkId": "backups",
+      "forOutcomes": [ "restoreOff", "nothingOn" ],
+      "buttonLabel": "Turn on System Restore",
+      "title": "Turn on System Restore",
+      "changes": {
+        "restoreOn": { "text": "Turn on System Restore for the Windows drive, so Windows can be wound back if an update or app causes trouble" }
+      },
+      "doneText": "System Restore is on.",
+      "failedText": "Windows didn't allow System Restore to be turned on. You can do it yourself with \"Open System Restore settings\". The details are in the log."
+    }
+  ]
+}

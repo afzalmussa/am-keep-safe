@@ -47,6 +47,20 @@ public sealed class SafetyCheckRunner(IReadOnlyList<ISafetyCheck> checks, CheckC
         return results;
     }
 
+    /// <summary>Runs one check again, for example after a fix. Null if there's no such check.</summary>
+    public async Task<CheckResult?> RunCheckAsync(string checkId, CancellationToken cancellationToken = default)
+    {
+        var definition = catalog.Checks.FirstOrDefault(d => d.Id == checkId);
+        var check = checks.FirstOrDefault(c => c.Id == checkId);
+        if (definition is null || check is null)
+        {
+            return null;
+        }
+
+        log.Info($"Checking '{checkId}' again.");
+        return await RunOneAsync(check, definition, cancellationToken).ConfigureAwait(false);
+    }
+
     private async Task<CheckResult> RunOneAsync(ISafetyCheck check, CheckDefinition definition, CancellationToken cancellationToken)
     {
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

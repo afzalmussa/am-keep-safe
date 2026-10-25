@@ -3,11 +3,14 @@ using System.Windows.Threading;
 using AMKeepSafe.Core.Checks;
 using AMKeepSafe.Core.Checks.Rules;
 using AMKeepSafe.Core.Configuration;
+using AMKeepSafe.Core.Fixes;
 using AMKeepSafe.Core.Logging;
+using AMKeepSafe.Core.Undo;
 using AMKeepSafe.Services;
 using AMKeepSafe.ViewModels;
 using AMKeepSafe.Views;
 using AMKeepSafe.Windows.Checks;
+using AMKeepSafe.Windows.Fixes;
 using AMKeepSafe.Windows.Platform;
 
 namespace AMKeepSafe;
@@ -59,8 +62,9 @@ public partial class App : Application
         var dialogs = new DialogService();
 
         var powerShell = new PowerShellRunner(_log);
+        var registry = new WindowsRegistryReader();
         var checks = SafetyCheckSet.Create(new CheckSources(
-            new WindowsRegistryReader(),
+            registry,
             new WindowsProcessList(),
             new WindowsUpdateInfo(powerShell),
             new AntivirusInfo(powerShell),
@@ -71,9 +75,19 @@ public partial class App : Application
             RemoteToolList.LoadEmbedded(),
             TimeProvider.System));
         var catalog = CheckCatalog.LoadEmbedded();
-        var safetyCheck = new SafetyCheckViewModel(new SafetyCheckRunner(checks, catalog, _log), catalog, shell, dialogs, _log);
 
-        var viewModel = new MainViewModel(_log, shell, dialogs, settings, options, safetyCheck);
+        // Everything that changes the PC goes through the fix runner: preview, record, change, check, log.
+        var changer = new WindowsSystemChanger(powerShell, registry);
+        var journal = new FileUndoJournal(AppPaths.UndoHistory, _log);
+        var fixRunner = new FixRunner(changer, journal, _log, TimeProvider.System, options.DryRun);
+        var fixCatalog = FixCatalog.LoadEmbedded();
+        var systemDrive = Environment.GetEnvironmentVariable("SystemDrive") ?? "C:";
+        var fixes = new FixCoordinator(FixSet.Create(changer, systemDrive), fixCatalog, fixRunner, dialogs, _log);
+        var undo = new UndoViewModel(new UndoService(fixRunner, changer, journal, fixCatalog.Common, _log, TimeProvider.System), fixCatalog.Common, dialogs, shell, _log);
+
+        var safetyCheck = new SafetyCheckViewModel(new SafetyCheckRunner(checks, catalog, _log), catalog, shell, dialogs, _log, fixes);
+
+        var viewModel = new MainViewModel(_log, shell, dialogs, settings, options, safetyCheck, undo);
 
         var window = new MainWindow { DataContext = viewModel };
         MainWindow = window;

@@ -34,6 +34,12 @@ public class FriendlyTextTests
         Assert.Equal("today", FriendlyText.Ago(Now.AddDays(2), Now));
     }
 
+    [Fact]
+    public void Date_and_time_reads_naturally()
+    {
+        Assert.Matches(@"^\d{1,2} [A-Z][a-z]+ \d{4} at \d{1,2}:\d{2}(am|pm)$", FriendlyText.DateAndTime(Now));
+    }
+
     [Theory]
     [InlineData(new string[0], "")]
     [InlineData(new[] { "A" }, "A")]

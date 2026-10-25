@@ -42,6 +42,9 @@ public sealed record UndoEntry
 
     public DateTimeOffset? UndoneAt { get; init; }
 
+    /// <summary>Recorded before the change, but Windows then didn't make it. Hidden from the undo list.</summary>
+    public bool NotMade { get; init; }
+
     [JsonIgnore]
     public bool IsUndone => UndoneAt is not null;
 }
@@ -58,6 +61,9 @@ public interface IUndoJournal
 
     /// <summary>Returns false if there's no entry with that id.</summary>
     bool MarkUndone(Guid id, DateTimeOffset when);
+
+    /// <summary>The change was recorded but didn't happen. Returns false if there's no entry with that id.</summary>
+    bool MarkNotMade(Guid id);
 }
 
 /// <summary>
@@ -101,7 +107,11 @@ public sealed class FileUndoJournal : IUndoJournal
         }
     }
 
-    public bool MarkUndone(Guid id, DateTimeOffset when)
+    public bool MarkUndone(Guid id, DateTimeOffset when) => Update(id, e => e with { UndoneAt = when });
+
+    public bool MarkNotMade(Guid id) => Update(id, e => e with { NotMade = true });
+
+    private bool Update(Guid id, Func<UndoEntry, UndoEntry> change)
     {
         lock (_gate)
         {
@@ -112,7 +122,7 @@ public sealed class FileUndoJournal : IUndoJournal
                 return false;
             }
 
-            entries[index] = entries[index] with { UndoneAt = when };
+            entries[index] = change(entries[index]);
             Save();
             return true;
         }

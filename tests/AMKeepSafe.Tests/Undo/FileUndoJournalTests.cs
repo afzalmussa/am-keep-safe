@@ -116,6 +116,19 @@ public sealed class FileUndoJournalTests : IDisposable
     }
 
     [Fact]
+    public void Marking_a_change_as_not_made_is_saved()
+    {
+        var entry = RemoteDesktopTurnedOff();
+        var journal = Create();
+        journal.Add(entry);
+
+        Assert.True(journal.MarkNotMade(entry.Id));
+
+        Assert.True(Assert.Single(Create().GetAll()).NotMade);
+        Assert.False(Create().MarkNotMade(Guid.NewGuid()));
+    }
+
+    [Fact]
     public void Marking_an_unknown_entry_undone_returns_false()
     {
         Assert.False(Create().MarkUndone(Guid.NewGuid(), DateTimeOffset.UnixEpoch));

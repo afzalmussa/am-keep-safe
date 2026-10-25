@@ -12,6 +12,13 @@ public static class FriendlyText
 
     public static string Date(DateOnly when) => when.ToString("d MMMM yyyy", UkEnglish);
 
+    /// <summary>For example "25 October 2026 at 2:05pm", in the PC's own time zone.</summary>
+    public static string DateAndTime(DateTimeOffset when)
+    {
+        var local = when.ToLocalTime();
+        return $"{local.ToString("d MMMM yyyy", UkEnglish)} at {local.ToString("h:mm", UkEnglish)}{(local.Hour < 12 ? "am" : "pm")}";
+    }
+
     /// <summary>For example "today", "yesterday", "3 days ago", "5 weeks ago".</summary>
     public static string Ago(DateTimeOffset when, DateTimeOffset now)
     {

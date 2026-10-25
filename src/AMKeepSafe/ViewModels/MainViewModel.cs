@@ -14,9 +14,10 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly AppSettings _settings;
 
-    public MainViewModel(IAppLog log, IShellLauncher shell, IDialogService dialogs, AppSettings settings, AppOptions options, SafetyCheckViewModel? safetyCheck = null)
+    public MainViewModel(IAppLog log, IShellLauncher shell, IDialogService dialogs, AppSettings settings, AppOptions options, SafetyCheckViewModel? safetyCheck = null, UndoViewModel? undo = null)
     {
         SafetyCheck = safetyCheck;
+        Undo = undo;
         _log = log;
         _shell = shell;
         _dialogs = dialogs;
@@ -26,6 +27,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>The Safety check tab.</summary>
     public SafetyCheckViewModel? SafetyCheck { get; }
+
+    /// <summary>The "Undo changes" window.</summary>
+    public UndoViewModel? Undo { get; }
 
     public string ProductName => AppInfo.ProductName;
 
@@ -55,6 +59,19 @@ public sealed partial class MainViewModel : ObservableObject
         _dialogs.ShowMessage(
             "Couldn't open the log",
             $"The log couldn't be opened automatically. You can find it in this folder:\n\n{_log.LogDirectory}");
+    }
+
+    [RelayCommand]
+    private void OpenUndo()
+    {
+        if (Undo is null)
+        {
+            return;
+        }
+
+        _log.Info("User opened the undo list.");
+        Undo.Refresh();
+        _dialogs.ShowUndo(Undo);
     }
 
     [RelayCommand]
